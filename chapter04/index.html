@@ -1,0 +1,34 @@
+<!doctype html>
+
+<!--
+    WebSocket chat client
+
+    WebSocket and WebRTC based multi-user chat sample with two-way video
+    calling, including use of TURN if applicable or necessary.
+-->
+
+<html>
+<head>
+  <title>Dove into Webrtc example for chapter04</title>
+  <meta charset="utf-8">
+  <link href="chat.css" rel="stylesheet">
+  <script type="text/javascript" src="chatclient.js"></script>
+  <script src="adapter.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="infobox">
+      <h1>深入WebRTC直播技术-示例</h1>
+      <h2>点击用户列表里面的名称，建立WebRTC连接</h2>
+      <p>输入用户名: <input id="name" type="text" maxlength="12" required autocomplete="username" inputmode="verbatim" placeholder="Username">
+        <input type="button" name="login" value="加入" onclick="connect()"></p>
+    </div>
+    <ul class="userlistbox"></ul>
+    <div class="chatbox"></div>
+    <div class="camerabox">
+      <video id="received_video" autoplay></video>
+      <video id="local_video" autoplay muted></video>
+    </div>
+  </div>
+</body>
+</html>

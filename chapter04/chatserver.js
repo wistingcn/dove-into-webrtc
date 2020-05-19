@@ -193,27 +193,17 @@ wsServer.on('request', (request) => {
 
   let connection = request.accept("json", request.origin);
 
-  // Add the new connection to our list of connections.
-
   log("Connection accepted from " + connection.remoteAddress + ".");
   connectionArray.push(connection);
 
   connection.clientID = nextID;
   nextID++;
 
-  // Send the new client its token; it send back a "username" message to
-  // tell us what username they want to use.
-
   let msg = {
     type: "id",
     id: connection.clientID
   };
   connection.sendUTF(JSON.stringify(msg));
-
-  // Set up a handler for the "message" event received over WebSocket. This
-  // is a message sent by a client, and may be text to share with other
-  // users, a private message (text or signaling) for one user, or a command
-  // to the server.
 
   connection.on('message', (message) => {
     if (message.type === 'utf8') {
@@ -225,14 +215,7 @@ wsServer.on('request', (request) => {
       msg = JSON.parse(message.utf8Data);
       let connect = getConnectionForID(msg.id);
 
-      // Take a look at the incoming object and act on it based
-      // on its type. Unknown message types are passed through,
-      // since they may be used to implement client-side features.
-      // Messages with a "target" property are sent only to a user
-      // by that name.
-
       switch(msg.type) {
-        // Public, textual message
         case "message":
           msg.name = connect.username;
           msg.text = msg.text.replace(/(<([^>]+)>)/ig, "");
@@ -273,18 +256,10 @@ wsServer.on('request', (request) => {
           break;
       }
 
-      // Convert the revised message back to JSON and send it out
-      // to the specified client or all clients, as appropriate. We
-      // pass through any messages not specifically handled
-      // in the select block above. This allows the clients to
-      // exchange signaling and other control objects unimpeded.
-
       if (sendToClients) {
         let msgString = JSON.stringify(msg);
         let i;
 
-        // If the message specifies a target username, only send the
-        // message to them. Otherwise, send it to every user.
         if (msg.target && msg.target !== undefined && msg.target.length !== 0) {
           sendToOneUser(msg.target, msgString);
         } else {
@@ -296,19 +271,12 @@ wsServer.on('request', (request) => {
     }
   });
 
-  // Handle the WebSocket "close" event; this means a user has logged off
-  // or has been disconnected.
   connection.on('close', (reason, description) => {
-    // First, remove the connection from the list of connections.
     connectionArray = connectionArray.filter((el, idx, ar) => {
       return el.connected;
     });
 
-    // Now send the updated user list. Again, please don't do this in a
-    // real application. Your users won't like you very much.
     sendUserListToAll();
-
-    // Build and output log output for close information.
 
     let logMessage = "Connection closed: " + connection.remoteAddress + " (" + reason;
     if (description !== null && description.length !== 0) {

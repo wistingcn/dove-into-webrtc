@@ -1,6 +1,5 @@
 //
-// This file contains the JavaScript code that implements the client-side
-// features for connecting and managing chat and video calls.
+// Dove into Webrtc example for RTCPeerConnection
 //
 
 "use strict";
@@ -13,7 +12,7 @@ let connection = null;
 let clientID = 0;
 let myUsername = null;
 let targetUsername = null;
-let myPeerConnection = null;
+let pc = null; // local RTCPeerConnection
 let transceiver = null; 
 let webcamStream = null; 
 let myHostname = null;
@@ -148,7 +147,7 @@ function connect() {
 async function createPeerConnection() {
   log("Setting up a connection...");
 
-  myPeerConnection = new RTCPeerConnection({
+  pc = new RTCPeerConnection({
     iceServers: [   
       {
         urls: "turn:" + "webrtc-from-chat.glitch.me",  // A TURN server
@@ -159,22 +158,34 @@ async function createPeerConnection() {
   });
 
   // Set up event handlers for the ICE negotiation process.
-  myPeerConnection.onconnectionstatechange = handleConnectionStateChange;
-  myPeerConnection.onicecandidateerror = handleIceCandidateError;
-  myPeerConnection.onicecandidate = handleICECandidateEvent;
-  myPeerConnection.oniceconnectionstatechange = handleICEConnectionStateChangeEvent;
-  myPeerConnection.onicegatheringstatechange = handleICEGatheringStateChangeEvent;
-  myPeerConnection.onsignalingstatechange = handleSignalingStateChangeEvent;
-  myPeerConnection.onnegotiationneeded = handleNegotiationNeededEvent;
-  myPeerConnection.ontrack = handleTrackEvent;
+  pc.onconnectionstatechange = handleConnectionStateChange;
+  pc.onicecandidateerror = handleIceCandidateError;
+  pc.onicecandidate = handleICECandidateEvent;
+  pc.oniceconnectionstatechange = handleICEConnectionStateChangeEvent;
+  pc.onicegatheringstatechange = handleICEGatheringStateChangeEvent;
+  pc.onsignalingstatechange = handleSignalingStateChangeEvent;
+  pc.onnegotiationneeded = handleNegotiationNeededEvent;
+  pc.ontrack = handleTrackEvent;
 }
 
-async function handleConnectionStateChange() {
-  warn("*** Connection state changed to: " + myPeerConnection.connectionState);
-  switch (myPeerConnection.connectionState) {
+function handleConnectionStateChange() {
+  warn("*** Connection state changed to: " + pc.connectionState);
+  switch (pc.connectionState) {
     case 'connected' :
-      const config = myPeerConnection.getConfiguration();
+      const config = pc.getConfiguration();
       log("*** Connection Configuration: " + JSON.stringify(config));
+      break;
+    case 'disconnected' :
+      break;
+    case 'failed' :
+      warn("Connection failed, now restartIce()...");
+      pc.restartIce();
+      setTimeout(()=> {
+        if(pc.iceConnectionState !== 'connected') {
+          error("restartIce failed! close video call!" + "Connection state:" + pc.connectionState);
+          closeVideoCall();
+        }
+      }, 10000);
       break;
   }
 }
@@ -187,22 +198,20 @@ async function handleNegotiationNeededEvent() {
   log("*** Negotiation needed");
 
   try {
-    if (myPeerConnection.signalingState != "stable") {
+    if (pc.signalingState != "stable") {
       log("-- The connection isn't stable yet; postponing...")
       return;
     }
 
     log("---> Setting local description to the offer");
-    await myPeerConnection.setLocalDescription();
-
-    // Send the offer to the remote peer.
+    await pc.setLocalDescription();
 
     log("---> Sending the offer to the remote peer");
     sendToServer({
       name: myUsername,
       target: targetUsername,
       type: "video-offer",
-      sdp: myPeerConnection.localDescription
+      sdp: pc.localDescription
     });
   } catch(err) {
     log("*** The following error occurred while handling the negotiationneeded event:");
@@ -228,20 +237,12 @@ function handleICECandidateEvent(event) {
 }
 
 function handleICEConnectionStateChangeEvent(event) {
-  warn("*** ICE connection state changed to " + myPeerConnection.iceConnectionState);
-
-  switch(myPeerConnection.iceConnectionState) {
-    case "closed":
-    case "failed":
-    case "disconnected":
-      closeVideoCall();
-      break;
-  }
+  warn("*** ICE connection state changed to " + pc.iceConnectionState);
 }
 
 function handleSignalingStateChangeEvent(event) {
-  warn("*** WebRTC signaling state changed to: " + myPeerConnection.signalingState);
-  switch(myPeerConnection.signalingState) {
+  warn("*** WebRTC signaling state changed to: " + pc.signalingState);
+  switch(pc.signalingState) {
     case "closed":
       closeVideoCall();
       break;
@@ -249,7 +250,7 @@ function handleSignalingStateChangeEvent(event) {
 }
 
 function handleICEGatheringStateChangeEvent(event) {
-  warn("*** ICE gathering state changed to: " + myPeerConnection.iceGatheringState);
+  warn("*** ICE gathering state changed to: " + pc.iceGatheringState);
 }
 
 function handleUserlistMsg(msg) {
@@ -273,18 +274,18 @@ function closeVideoCall() {
 
   warn("Closing the call");
 
-  if (myPeerConnection) {
+  if (pc) {
     warn("--> Closing the peer connection");
 
-    myPeerConnection.ontrack = null;
-    myPeerConnection.onnicecandidate = null;
-    myPeerConnection.oniceconnectionstatechange = null;
-    myPeerConnection.onsignalingstatechange = null;
-    myPeerConnection.onicegatheringstatechange = null;
-    myPeerConnection.onnotificationneeded = null;
+    pc.ontrack = null;
+    pc.onnicecandidate = null;
+    pc.oniceconnectionstatechange = null;
+    pc.onsignalingstatechange = null;
+    pc.onicegatheringstatechange = null;
+    pc.onnotificationneeded = null;
 
     // Stop all transceivers on the connection
-    myPeerConnection.getTransceivers().forEach(transceiver => {
+    pc.getTransceivers().forEach(transceiver => {
       transceiver.stop();
     });
 
@@ -296,8 +297,8 @@ function closeVideoCall() {
     }
 
     // Close the peer connection
-    myPeerConnection.close();
-    myPeerConnection = null;
+    pc.close();
+    pc = null;
     webcamStream = null;
   }
 
@@ -306,7 +307,7 @@ function closeVideoCall() {
 
 async function invite(evt) {
   log("Starting to prepare an invitation");
-  if (myPeerConnection) {
+  if (pc) {
     alert("You can't start a call because you already have one open!");
   } else {
     const clickedUsername = evt.target.textContent;
@@ -332,7 +333,7 @@ async function invite(evt) {
 
     try {
       webcamStream.getTracks().forEach(
-        transceiver = track => myPeerConnection.addTransceiver(track, {streams: [webcamStream]})
+        transceiver = track => pc.addTransceiver(track, {streams: [webcamStream]})
       );
     } catch(err) {
       handleGetUserMediaError(err);
@@ -344,23 +345,23 @@ async function handleVideoOfferMsg(msg) {
   targetUsername = msg.name;
 
   log("Received video chat offer from " + targetUsername);
-  if (!myPeerConnection) {
+  if (!pc) {
     createPeerConnection();
   }
 
-  if (myPeerConnection.signalingState != "stable") {
+  if (pc.signalingState != "stable") {
     log("  - But the signaling state isn't stable, so triggering rollback");
 
     // Set the local and remove descriptions for rollback; don't proceed
     // until both return.
     await Promise.all([
-      myPeerConnection.setLocalDescription({type: "rollback"}),
-      myPeerConnection.setRemoteDescription(msg.sdp)
+      pc.setLocalDescription({type: "rollback"}),
+      pc.setRemoteDescription(msg.sdp)
     ]);
     return;
   } else {
     log ("  - Setting remote description");
-    await myPeerConnection.setRemoteDescription(msg.sdp);
+    await pc.setRemoteDescription(msg.sdp);
   }
 
   if (!webcamStream) {
@@ -377,7 +378,7 @@ async function handleVideoOfferMsg(msg) {
 
     try {
       webcamStream.getTracks().forEach(
-        transceiver = track => myPeerConnection.addTransceiver(track, {streams: [webcamStream]})
+        transceiver = track => pc.addTransceiver(track, {streams: [webcamStream]})
       );
     } catch(err) {
       handleGetUserMediaError(err);
@@ -386,24 +387,24 @@ async function handleVideoOfferMsg(msg) {
 
   log("---> Creating and sending answer to caller");
 
-  await myPeerConnection.setLocalDescription();
+  await pc.setLocalDescription();
   sendToServer({
     name: myUsername,
     target: targetUsername,
     type: "video-answer",
-    sdp: myPeerConnection.localDescription
+    sdp: pc.localDescription
   });
 }
 
 async function handleVideoAnswerMsg(msg) {
   log("*** Call recipient has accepted our call");
-  await myPeerConnection.setRemoteDescription(msg.sdp).catch(reportError);
+  await pc.setRemoteDescription(msg.sdp).catch(reportError);
 }
 
 async function handleNewICECandidateMsg(msg) {
   log("*** Adding received ICE candidate: " + JSON.stringify(msg.candidate));
   try {
-    await myPeerConnection.addIceCandidate(msg.candidate)
+    await pc.addIceCandidate(msg.candidate)
   } catch(err) {
     reportError(err);
   }

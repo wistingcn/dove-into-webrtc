@@ -8,9 +8,7 @@ cnpm i
 ```bash
 # 如果在本机运行，则不建议使用证书：
 node peerserver.js 
-```
 # 如果运行于服务器上，建议使用Https证书：
-```bash
 node peerserver.js --cert <证书文件路径> --key <key文件路径>
 ```
 ## 打开一个新的终端，启动Http服务器：

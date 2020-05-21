@@ -8,12 +8,26 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const WebSocketServer = require('websocket').server;
+const yargs = require('yargs');
+
+yargs.usage('Usage: $0 --nocert')
+.version('peerserver 0.1')
+.option('cert', {describe : 'ssl certificate file'})
+.option('key', {describe: 'ssl certificate key file'});
 
 // Pathnames of the SSL key and certificate files to use for
 // HTTPS connections.
 
-const keyFilePath = "certs/rtc.liweix.com.key";
-const certFilePath = "certs/rtc.liweix.com.pem";
+let keyFilePath = null;
+let certFilePath = null;
+if (yargs.argv.cert) {
+  certFilePath = yargs.argv.cert;
+  log('use cert file: ' + certFilePath);
+}
+if (yargs.argv.key) {
+  keyFilePath = yargs.argv.key;
+  log('use key file: ' + keyFilePath);
+}
 
 // Used for managing the text chat user list.
 let connectionArray = [];

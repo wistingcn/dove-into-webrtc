@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "webrtc-adapter": "^1.4.0",
-    "websocket": "^1.0.29"
+    "websocket": "^1.0.29",
+		"yargs": "^15.1.0
   }
 }

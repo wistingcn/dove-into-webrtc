@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        background: black;
+        color:#CCCCCC; 
+      }
+      #c2 {
+        background-image: url(media/beach.jpg);
+        background-repeat: repeat;
+        background-size: contain;
+      }
+      div {
+        float: left;
+        border :1px solid #444444;
+        padding:10px;
+        margin: 10px;
+        background:#3B3B3B;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div>
+      <video id="camera" autoplay playsinline controls/>
+    </div>
+    <div>
+      <video id="camera-chroma" autoplay playsinline controls/>
+    </div>
+  <script type="text/javascript" src="processor.js"></script>
+  </body>
+</html>

@@ -8,7 +8,7 @@ const mediaConstraints = {
   audio: true,
   video: true
 };
-let connection = null;
+let websock = null; //WebSocket
 let clientID = 0;
 let myUsername = null;
 let targetUsername = null;
@@ -67,7 +67,7 @@ function sendToServer(msg) {
   const msgJSON = JSON.stringify(msg);
 
   log("Sending '" + msg.type + "' message: " + msgJSON);
-  connection.send(msgJSON);
+  websock.send(msgJSON);
 }
 
 function setUsername() {
@@ -90,13 +90,13 @@ function connect() {
   const serverUrl = scheme + "://" + myHostname + ":6503";
 
   log(`Connecting to server: ${serverUrl}`);
-  connection = new WebSocket(serverUrl, "json");
+  websock = new WebSocket(serverUrl, "json");
 
-  connection.onerror = (evt) => {
+  websock.onerror = (evt) => {
     console.dir(evt);
   }
 
-  connection.onmessage = (evt) => {
+  websock.onmessage = (evt) => {
     let text = "";
     const msg = JSON.parse(evt.data);
     log("Message received: " + evt.data);
@@ -144,7 +144,7 @@ function connect() {
   };
 }
 
-async function createPeerConnection() {
+function createPeerConnection() {
   log("Setting up a connection...");
 
   pc = new RTCPeerConnection({
@@ -190,7 +190,7 @@ function handleConnectionStateChange() {
   }
 }
 
-async function handleIceCandidateError(event) {
+function handleIceCandidateError(event) {
   error("ICE Candidate Error, errCode: " + event.errorCode + " errorText: " + event.errorText);
 }
 
@@ -308,12 +308,12 @@ function closeVideoCall() {
 async function invite(evt) {
   log("Starting to prepare an invitation");
   if (pc) {
-    alert("You can't start a call because you already have one open!");
+    alert("不能发起呼叫，因为已经存在一个了！");
   } else {
     const clickedUsername = evt.target.textContent;
 
     if (clickedUsername === myUsername) {
-      alert("I'm afraid I can't let you talk to yourself. That would be weird.");
+      alert("不能呼叫自己!");
       return;
     }
 

@@ -14,7 +14,7 @@ html, body {
   grid-template-areas: "infobox infobox infobox"
   "userlistbox logbox camerabox";
   grid-template-columns: 10em 1fr 500px;
-  grid-template-rows: 16em 1fr;
+  grid-template-rows: 20em 1fr;
   grid-gap: 1rem;
 }
 
@@ -51,9 +51,7 @@ html, body {
 .camerabox {
   grid-area: camerabox;
   width: 500px;
-  height: 420px;
   border: 1px solid black;
-  vertical-align: top;
   display: block;
   position:relative;
   overflow:auto;
@@ -72,6 +70,16 @@ html, body {
   position: absolute;
   top: 1rem;
   left: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 4px black;
+}
+
+#chroma_video {
+  width: 120px;
+  height: 90px;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.75);
   box-shadow: 0 0 4px black;
 }

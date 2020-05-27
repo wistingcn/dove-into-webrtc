@@ -8,6 +8,7 @@
   <meta charset="utf-8">
   <link href="peer.css" rel="stylesheet">
   <script type="text/javascript" src="peerclient.js"></script>
+  <script type="text/javascript" src="processor.js"></script>
   <script src="adapter.js"></script>
 </head>
 <body>
@@ -17,10 +18,23 @@
       <h2>点击用户列表里面的名称，建立WebRTC连接</h2>
       <p>输入用户名: <input id="name" type="text" maxlength="12" required autocomplete="username" inputmode="verbatim" placeholder="Username">
         <input type="button" name="login" value="加入" onclick="connect()"></p>
+      <p>设置视频码率(kbps): <input id="bitrate" type="text" maxlength="12" required  inputmode="verbatim">
+        <input type="button" id="updateBitrate" name="update" value="更新" onclick="updateBitrate()" disabled></p>
+      <p>选择视频编码格式: 
+        <select id="codecSelect">
+          <option value="VP8" selected>VP8</option>
+          <option value="VP9">VP9</option>
+          <option value="H264">H264</option>
+        </select>
+        <input type="button" id="selectCodec" value="选择" onclick="selectCodec()"></p>
+      <p>
+        <input type="checkbox" id="replace" value="true" onclick="replaceBackground()" disabled>替换背景
+      </p>
     </div>
     <ul class="userlistbox"></ul>
     <div class="logbox"></div>
     <div class="camerabox">
+      <video id="chroma_video" autoplay style="display: none;"></video>
       <video id="received_video" autoplay></video>
       <video id="local_video" autoplay muted></video>
     </div>

@@ -17,6 +17,27 @@ let transceiver = null;
 let webcamStream = null; 
 let myHostname = null;
 let logBox = null;
+let chroma = null
+let isConnected = false;
+let selectedCodec = 'VP8';
+
+function getCapabilitiesCodec(codec) {
+  let capCodes = RTCRtpSender.getCapabilities('video').codecs;
+  let cap = null;
+  switch(codec) {
+    case 'VP8':
+    case 'VP9':
+      cap = capCodes.find(item => item.mimeType.match(codec));
+      break;
+    case 'H264':
+      cap = capCodes.find(item => item.mimeType.match(codec) && item.sdpFmtpLine.match('42e01f'));
+  }
+
+  capCodes = capCodes.filter(item => item !== cap);
+  capCodes = [cap, ...capCodes];
+  log("Sorted Capabilities =>" + JSON.stringify(capCodes));
+  return capCodes;
+}
 
 window.onload = () => {
   logBox = document.querySelector(".logbox");
@@ -31,6 +52,65 @@ window.onload = () => {
   log("Hostname: " + myHostname);
 
   console.log('document loaded');
+}
+
+function replaceBackground() {
+  if (!isConnected) return;
+
+  if (!chroma) {
+    chroma = new ChromaKey();
+    chroma.doLoad();
+  }
+
+  const checkBox = document.getElementById('replace');
+  if (checkBox.checked) {
+    log("replace background checked!");
+    const chromaTrack = chroma.capStream.getVideoTracks()[0];
+    pc.getSenders().forEach(sender => {
+      if(sender.track.kind !== 'video') return;
+      sender.replaceTrack(chromaTrack);
+    });
+    document.getElementById("chroma_video").srcObject = chroma.capStream;
+  } else {
+    log("replace background unchecked!");
+    const cameraTrack = webcamStream.getVideoTracks()[0];
+    pc.getSenders().forEach(sender => {
+      if(sender.track.kind !== 'video') return;
+      sender.replaceTrack(cameraTrack);
+    });
+    document.getElementById("chroma_video").srcObject = webcamStream;
+  }
+}
+
+function updateBitrate() {
+  if(!pc || !isConnected) return;
+  let bitrate = document.getElementById('bitrate').value;
+  log("* Set MaxBitrate to : " + bitrate + "kbps");
+  bitrate = bitrate * 1024;
+
+  pc.getSenders().forEach(sender => {
+    if(sender.track.kind === 'audio') return;
+
+    let param = sender.getParameters();
+    param.encodings[0].maxBitrate = bitrate;
+    sender.setParameters(param).catch(error => {
+      error("Set MaxBitrate error! " + error.name);
+    });
+
+    param = sender.getParameters();
+    log(" * Video Sender Encodings * ");
+    const senderParamsEncoding = param.encodings.map(encoding => JSON.stringify(encoding)).join("\n");
+    log(senderParamsEncoding);
+  });
+}
+
+function selectCodec() {
+  selectedCodec = document.getElementById("codecSelect").value;
+  log("* Select codec : " + selectedCodec);
+
+  if (isConnected) {
+    pc.restartIce();
+  }
 }
 
 function log(text) {
@@ -99,9 +179,10 @@ function connect() {
   websock.onmessage = (evt) => {
     let text = "";
     const msg = JSON.parse(evt.data);
-    log("Message received: " + evt.data);
     const time = new Date(msg.date);
     const timeStr = time.toLocaleTimeString();
+
+    log("Receive'" + msg.type + "' message: " + evt.data);
 
     switch(msg.type) {
       case "id":
@@ -147,15 +228,7 @@ function connect() {
 function createPeerConnection() {
   log("Setting up a connection...");
 
-  pc = new RTCPeerConnection({
-    iceServers: [   
-      {
-        urls: "turn:" + "webrtc-from-chat.glitch.me",  // A TURN server
-        username: "webrtc",
-        credential: "turnserver"
-      }
-    ]
-  });
+  pc = new RTCPeerConnection();
 
   // Set up event handlers for the ICE negotiation process.
   pc.onconnectionstatechange = handleConnectionStateChange;
@@ -174,8 +247,12 @@ function handleConnectionStateChange() {
     case 'connected' :
       const config = pc.getConfiguration();
       log("*** Connection Configuration: " + JSON.stringify(config));
+      getSenderParams();
+      getReceiverParams();
+      isConnected = true;
       break;
     case 'disconnected' :
+      isConnected = false;
       break;
     case 'failed' :
       warn("Connection failed, now restartIce()...");
@@ -196,13 +273,22 @@ function handleIceCandidateError(event) {
 
 async function handleNegotiationNeededEvent() {
   log("*** Negotiation needed");
+  if (pc.signalingState != "stable") {
+    log("-- The connection isn't stable yet; postponing...")
+    return;
+  }
+
+  const codecCap = getCapabilitiesCodec(selectedCodec);
+  try {
+    pc.getTransceivers().forEach(t => {
+      if(t.sender.track.kind !== 'video') return;
+      t.setCodecPreferences(codecCap);
+    });
+  } catch(err) {
+    error("setCodecPreferences error! " + err.name);
+  }
 
   try {
-    if (pc.signalingState != "stable") {
-      log("-- The connection isn't stable yet; postponing...")
-      return;
-    }
-
     log("---> Setting local description to the offer");
     await pc.setLocalDescription();
 
@@ -243,6 +329,9 @@ function handleICEConnectionStateChangeEvent(event) {
 function handleSignalingStateChangeEvent(event) {
   warn("*** WebRTC signaling state changed to: " + pc.signalingState);
   switch(pc.signalingState) {
+    case "stable":
+      getSenderParams();
+      break;
     case "closed":
       closeVideoCall();
       break;
@@ -254,6 +343,7 @@ function handleICEGatheringStateChangeEvent(event) {
 }
 
 function handleUserlistMsg(msg) {
+  log("Receive user list from server: " + JSON.stringify(msg.users));
   const listElem = document.querySelector(".userlistbox");
 
   while (listElem.firstChild) {
@@ -309,36 +399,40 @@ async function invite(evt) {
   log("Starting to prepare an invitation");
   if (pc) {
     alert("不能发起呼叫，因为已经存在一个了！");
-  } else {
-    const clickedUsername = evt.target.textContent;
+    return;
+  } 
 
-    if (clickedUsername === myUsername) {
-      alert("不能呼叫自己!");
-      return;
-    }
-
-    targetUsername = clickedUsername;
-    log("Inviting user " + targetUsername);
-
-    log("Setting up connection to invite user: " + targetUsername);
-    createPeerConnection();
-
-    try {
-      webcamStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-      document.getElementById("local_video").srcObject = webcamStream;
-    } catch(err) {
-      handleGetUserMediaError(err);
-      return;
-    }
-
-    try {
-      webcamStream.getTracks().forEach(
-        transceiver = track => pc.addTransceiver(track, {streams: [webcamStream]})
-      );
-    } catch(err) {
-      handleGetUserMediaError(err);
-    }
+  const clickedUsername = evt.target.textContent;
+  if (clickedUsername === myUsername) {
+    alert("不能呼叫自己!");
+    return;
   }
+
+  log("Getting local camera...");
+  try {
+    webcamStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+    document.getElementById("local_video").srcObject = webcamStream;
+  } catch(err) {
+    handleGetUserMediaError(err);
+    return;
+  }
+
+  getRtpCapabilities();
+
+  targetUsername = clickedUsername;
+  log("Setting up connection to invite user: " + targetUsername);
+  createPeerConnection();
+
+  try {
+    webcamStream.getTracks().forEach(
+      track => pc.addTrack(track, webcamStream)
+    );
+  } catch(err) {
+    handleGetUserMediaError(err);
+  }
+
+  document.getElementById('replace').disabled = false;
+  document.getElementById('updateBitrate').disabled = false;
 }
 
 async function handleVideoOfferMsg(msg) {
@@ -374,11 +468,9 @@ async function handleVideoOfferMsg(msg) {
 
     document.getElementById("local_video").srcObject = webcamStream;
 
-    // Add the camera stream to the RTCPeerConnection
-
     try {
       webcamStream.getTracks().forEach(
-        transceiver = track => pc.addTransceiver(track, {streams: [webcamStream]})
+        track => pc.addTrack(track, webcamStream)
       );
     } catch(err) {
       handleGetUserMediaError(err);
@@ -397,7 +489,8 @@ async function handleVideoOfferMsg(msg) {
 }
 
 async function handleVideoAnswerMsg(msg) {
-  log("*** Call recipient has accepted our call");
+  const  targetUsername = msg.name;
+  log("*** Receive video chat answer from: " + targetUsername);
   await pc.setRemoteDescription(msg.sdp).catch(reportError);
 }
 
@@ -430,4 +523,85 @@ function handleGetUserMediaError(e) {
 
 function reportError(errMessage) {
   error(`Error ${errMessage.name}: ${errMessage.message}`);
+}
+
+function getRtpCapabilities() {
+  const videoCapabilities = RTCRtpSender.getCapabilities('video');
+  const audioCapabilities = RTCRtpSender.getCapabilities('audio');
+
+  const videoCodecList = videoCapabilities.codecs;
+  const videoCodecListString = videoCodecList.map(codec => JSON.stringify(codec)).join("\n");
+  const videoRtpExtensionUri = videoCapabilities.headerExtensions.uri;
+
+  log(" *** Video Sender Capabilitie *** ");
+  log(videoCodecListString);
+  log("RTP headerExtensions: " + videoRtpExtensionUri);
+
+  const audioCodecList = audioCapabilities.codecs;
+  const audioCodecListString = audioCodecList.map(codec => JSON.stringify(codec)).join("\n");
+  const audioRtpExtensionUri = audioCapabilities.headerExtensions.uri;
+
+  log(" *** Audio Sender Capabilitie *** ");
+  log(audioCodecListString);
+  log("RTP headerExtensions: " + audioRtpExtensionUri);
+}
+
+function getSenderParams() {
+  const transceivers = pc.getTransceivers();
+  log("Transceivers number: " + transceivers.length);
+  transceivers.forEach(transceiver => {
+    const sender = transceiver.sender;
+
+    if(sender.track.kind !== 'video') return;
+
+    let senderParams = sender.getParameters();
+    const senderTrans = sender.transport;
+
+    log(" *** Transceivers sender track : " + sender.track.id + "(" + sender.track.kind + ") *** ");
+    log(`
+      Transceiver currentDirection : ${transceiver.currentDirection}
+      Transceiver mid: ${transceiver.mid}
+      `);
+
+    log("Send transport role: " + senderTrans.iceTransport.role);
+    log("Send transport local candidate pair : " + senderTrans.iceTransport.getSelectedCandidatePair().local.candidate);
+    log("Send transport remote candidate pair: " + senderTrans.iceTransport.getSelectedCandidatePair().remote.candidate);
+    log("Sender transactionId: " + senderParams.transactionId);
+    log(" * Video Sender Codecs * ");
+    const senderParamsCodec = senderParams.codecs.map(codec => JSON.stringify(codec)).join("\n");
+    log(senderParamsCodec);
+    log(" * Video Sender Encodings * ");
+    const senderParamsEncoding = senderParams.encodings.map(encoding => JSON.stringify(encoding)).join("\n");
+    log(senderParamsEncoding);
+  });
+}
+
+function getReceiverParams() {
+  const transceivers = pc.getTransceivers();
+  log("Transceivers number: " + transceivers.length);
+  transceivers.forEach(transceiver => {
+    const receiver = transceiver.receiver;
+
+    if(receiver.track.kind !== 'video') return;
+
+    const receiverParams = receiver.getParameters();
+    const receiverTrans = receiver.transport;
+
+    log(" *** Transceivers receiver track : " + receiver.track.id + "(" + receiver.track.kind + ") *** ");
+    log(`
+      Transceiver currentDirection : ${transceiver.currentDirection}
+      Transceiver mid: ${transceiver.mid}
+      `);
+
+    log("Receiver transport role: " + receiverTrans.iceTransport.role);
+    log("Receiver transport local candidate pair : " + receiverTrans.iceTransport.getSelectedCandidatePair().local.candidate);
+    log("Receiver transport remote candidate pair: " + receiverTrans.iceTransport.getSelectedCandidatePair().remote.candidate);
+    log(" * Video Receiver Codecs * ");
+    const receiverParamsCodec = receiverParams.codecs.map(codec => JSON.stringify(codec)).join("\n");
+    log(receiverParamsCodec);
+    log(" * Video Receiver Encodings * ");
+    const ReceiverParamsEncoding = receiverParams.encodings.map(encoding => JSON.stringify(encoding)).join("\n");
+    log(ReceiverParamsEncoding);
+  });
+
 }

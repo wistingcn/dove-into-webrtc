@@ -1,0 +1,93 @@
+<html>
+<body>
+<video autoplay></video>
+<img>
+<div hidden>
+  <input id="pan" name="pan" title="Pan" type="range" />
+  <label for="pan">Pan</label>
+</div>
+<div hidden>
+  <input id="tilt" name="tilt" title="Tilt" type="range" />
+  <label for="tilt">Tilt</label>
+</div>
+<div hidden>
+  <input id="zoom" name="zoom" title="Zoom" type="range" />
+  <label for="zoom">Zoom</label>
+</div>
+<script>
+  var imageCapture;
+
+  navigator.mediaDevices.getUserMedia({
+      video: {pan: true, tilt: true, zoom: true}
+    })
+    .then(gotMedia)
+    .catch(err => console.error('getUserMedia() failed: ', err));
+
+  function gotMedia(mediastream) {
+    const video = document.querySelector('video');
+    video.srcObject = mediastream;
+
+    const track = mediastream.getVideoTracks()[0];
+    imageCapture = new ImageCapture(track);
+
+    const capabilities = track.getCapabilities()
+    const settings = track.getSettings();
+
+    // Check whether pan is supported or not.
+    if (capabilities.pan) {
+      // Map pan to a slider element.
+      const input = document.querySelector('input[name="pan"][type="range"]');
+      input.min = capabilities.pan.min;
+      input.max = capabilities.pan.max;
+      input.step = capabilities.pan.step;
+      input.value = settings.pan;
+      input.oninput = function(event) {
+        track.applyConstraints({advanced: [{pan: event.target.value}]});
+      };
+      input.parentElement.hidden = false;
+    } else {
+			console.error('do not support pan');
+		}
+
+    // Check whether tilt is supported or not.
+    if (capabilities.tilt) {
+      // Map tilt to a slider element.
+      const input = document.querySelector('input[name="tilt"][type="range"]');
+      input.min = capabilities.tilt.min;
+      input.max = capabilities.tilt.max;
+      input.step = capabilities.tilt.step;
+      input.value = settings.tilt;
+      input.oninput = function(event) {
+        track.applyConstraints({advanced: [{tilt: event.target.value}]});
+      };
+      input.parentElement.hidden = false;
+    }
+
+    // Check whether zoom is supported or not.
+    if (capabilities.zoom) {
+      // Map zoom to a slider element.
+      const input = document.querySelector('input[name="zoom"][type="range"]');
+      input.min = capabilities.zoom.min;
+      input.max = capabilities.zoom.max;
+      input.step = capabilities.zoom.step;
+      input.value = settings.zoom;
+      input.oninput = function(event) {
+        track.applyConstraints({advanced: [{zoom: event.target.value}]});
+      };
+      input.parentElement.hidden = false;
+    }
+  }
+
+  function takePhoto() {
+    imageCapture.takePhoto()
+      .then(blob => {
+        console.log('Photo taken: ' + blob.type + ', ' + blob.size + 'B');
+
+        const image = document.querySelector('img');
+        image.src = URL.createObjectURL(blob);
+      })
+      .catch(err => console.error('takePhoto() failed: ', err));
+  }
+</script>
+</body>
+</html>

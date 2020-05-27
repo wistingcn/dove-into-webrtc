@@ -14,7 +14,7 @@ html, body {
   grid-template-areas: "infobox infobox infobox"
   "userlistbox logbox camerabox";
   grid-template-columns: 10em 1fr 500px;
-  grid-template-rows: 20em 1fr;
+  grid-template-rows: 16em 1fr;
   grid-gap: 1rem;
 }
 

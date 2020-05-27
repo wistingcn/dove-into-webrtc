@@ -93,14 +93,16 @@ function updateBitrate() {
 
     let param = sender.getParameters();
     param.encodings[0].maxBitrate = bitrate;
-    sender.setParameters(param).catch(error => {
+    sender.setParameters(param)
+    .then(() => {
+      param = sender.getParameters();
+      log(" * Video Sender Encodings * ");
+      const senderParamsEncoding = param.encodings.map(encoding => JSON.stringify(encoding)).join("\n");
+      log(senderParamsEncoding);
+    })
+    .catch(error => {
       error("Set MaxBitrate error! " + error.name);
     });
-
-    param = sender.getParameters();
-    log(" * Video Sender Encodings * ");
-    const senderParamsEncoding = param.encodings.map(encoding => JSON.stringify(encoding)).join("\n");
-    log(senderParamsEncoding);
   });
 }
 
@@ -350,7 +352,7 @@ function handleUserlistMsg(msg) {
     listElem.removeChild(listElem.firstChild);
   }
 
-  msg.users.forEach(function(username) {
+  msg.users.forEach((username) => {
     let item = document.createElement("li");
     item.appendChild(document.createTextNode(username));
     item.addEventListener("click", invite, false);

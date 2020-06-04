@@ -2,7 +2,7 @@
   "name": "signaling-server",
   "version": "1.0.0",
   "scripts": {
-		"start": "ts-node server.ts --cert ./certs/rtc.liweix.com.pem --key ./certs/rtc.liweix.com.key",
+    "start": "ts-node server.ts --cert ./certs/rtc.liweix.com.pem --key ./certs/rtc.liweix.com.key",
     "build": "tsc; cp start.sh dist/",
     "pack": "webpack"
   },
@@ -21,6 +21,7 @@
     "express-session": "^1.17.0",
     "got": "^10.5.5",
     "helmet": "^3.21.2",
+    "log4js": "^6.3.0",
     "morgan": "^1.9.1",
     "socket.io": "^2.3.0",
     "ts-node": "^8.8.1",

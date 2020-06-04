@@ -1,10 +1,7 @@
 import { EventEmitter } from 'events';
 import {Peer} from './Peer';
-import { RoomStatus } from './defines';
-
-import { Logger } from './Logger';
-const logger = new Logger('Room');
-
+import { getLogger } from 'log4js';
+const logger = getLogger();
 
 export class Room extends EventEmitter {
 	static async create(roomId:string ) {
@@ -17,14 +14,6 @@ export class Room extends EventEmitter {
 	public closed = false;
 	private bornTime = Date.now();
 	private activeTime = Date.now();
-	private classRoom = {
-		startTime: 0,
-		stopTime: 0,
-		status: RoomStatus.stopped,
-		logoUrl: '',
-		announcementText: '',
-		videoFilter: false,
-	};
 
 	constructor( public id: string ){
 		super();
@@ -101,7 +90,6 @@ export class Room extends EventEmitter {
 			peers: [...this.peers.keys()],
 			duration: dura,
 			lastActive,
-			status: this.classRoom.status,
 			closed: this.closed
 		};
 	}
@@ -133,7 +121,6 @@ export class Room extends EventEmitter {
 			case 'join':
 			{
 				const {
-					roler,
 					displayName,
 					picture,
 					platform,
@@ -144,7 +131,6 @@ export class Room extends EventEmitter {
 					break;
 				}
 
-				peer.roler = roler;
 				peer.displayName = displayName;
 				peer.picture = picture;
 				peer.platform = platform;
@@ -166,8 +152,8 @@ export class Room extends EventEmitter {
 				);
 
 				logger.debug(
-					'peer joined [peer: "%s", displayName: "%s", picture: "%s", roler:"%s", platform: "%s"]',
-					peer.id, displayName, picture, roler, platform);
+					'peer joined [peer: "%s", displayName: "%s", picture: "%s", platform: "%s"]',
+					peer.id, displayName, picture, platform);
 
 				peer.joined = true;
 				break;

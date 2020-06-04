@@ -1,12 +1,10 @@
 import { EventEmitter } from 'events';
 import * as socketio from 'socket.io';
-import { Logger } from './Logger';
-const logger = new Logger('Peer');
-import { ROLE } from './defines';
 import {Room} from './Room';
+import { getLogger } from 'log4js';
+const logger = getLogger();
 
 export class Peer extends EventEmitter {
-	roler: ROLE;
 	closed = false;
 	joined = false;
 	displayName: string;
@@ -14,9 +12,6 @@ export class Peer extends EventEmitter {
 	platform: string;
 	address: string;
 	enterTime = Date.now();
-
-	disconnectCheck = 0;
-	intervalHandler;
 
 	constructor(
 		public id: string, 
@@ -41,9 +36,6 @@ export class Peer extends EventEmitter {
 			this.socket.disconnect(true);
 		}
 
-		if ( this.intervalHandler ) {
-			clearInterval(this.intervalHandler);
-		}
 		this.emit('close');
 	}
 
@@ -76,7 +68,6 @@ export class Peer extends EventEmitter {
 	peerInfo() {
 		const peerInfo = {
 			id          : this.id,
-			roler		: this.roler,
 			displayName : this.displayName,
 			picture     : this.picture,
 			platform	: this.platform,

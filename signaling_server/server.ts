@@ -8,22 +8,20 @@ import { Room } from './lib/Room';
 import { Peer } from './lib/Peer';
 import * as socketio from 'socket.io';
 import yargs from 'yargs';
-import { Logger } from './lib/Logger';
-import {lConfig} from './config/config';
+import { connectLogger, getLogger, configure } from 'log4js';
+configure('./log4js.json');
+const logger = getLogger();
 
 const helmet = require('helmet');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const compression = require('compression');
-const morgan = require('morgan');
-const logger = new Logger();
 
 yargs.usage('Usage: $0 --cert [file] --key [file]')
 .version('signaling-server 1.0')
 .demandOption(['cert', 'key'])
 .option('cert', {describe : 'ssl certificate file'})
 .option('key', {describe: 'ssl certificate key file'});
-
 
 const certfile = yargs.argv.cert as string;
 const keyfile = yargs.argv.key as string;
@@ -43,7 +41,7 @@ const tls = {
 const app = express();
 app.use(compression());
 
-app.use(morgan('dev'));
+app.use(connectLogger(getLogger('http'), {level: 'auto'}));
 
 app.use(helmet.hsts());
 app.use(bodyParser.json());
@@ -95,13 +93,13 @@ const runHttpsServer = async () => {
 	});
 
 	httpsServer = https.createServer(tls, app);
-	httpsServer.listen(lConfig.listeningPort, () => {
-		logger.info(`Listening at ${lConfig.listeningPort}...`);
+	httpsServer.listen(443, () => {
+		logger.info(`Listening at 443...`);
 	});
 
 	const httpServer = http.createServer(app);
-	httpServer.listen(lConfig.listeningRedirectPort,() => {
-		logger.info(`Listening at ${lConfig.listeningRedirectPort}...`);
+	httpServer.listen(80, () => {
+		logger.info(`Listening at 80...`);
 	});
 }
 
@@ -111,7 +109,7 @@ const runWebSocketServer = async () => {
 		pingInterval: 5000,
 	});
 
-	logger.info("run websocket server....");
+	logger.info("run socketio server....");
 
 	io.on('connection', async (socket) => {
 		const { roomId, peerId } = socket.handshake.query;

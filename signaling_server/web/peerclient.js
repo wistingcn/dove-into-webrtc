@@ -234,10 +234,10 @@ function connect() {
       case 'newPeer':
         handleUserlistMsg([msg]);
         break;
-      case 'videoAnswer':
+      case 'sdpAnswer':
         handleVideoAnswerMsg(msg);
         break;
-      case 'videoOffer':
+      case 'sdpOffer':
         handleVideoOfferMsg(msg);
         break;
       case 'newIceCandidate' :
@@ -334,7 +334,7 @@ async function handleNegotiationNeededEvent() {
 
     log("---> Sending the offer to the remote peer");
 
-    sendRequest('videoOffer', {
+    sendRequest('sdpOffer', {
       from: peerID,
       to: inviteUser.id,
       sdp: pc.localDescription
@@ -482,6 +482,7 @@ async function invite(id) {
 async function handleVideoOfferMsg(msg) {
   const fromUser = usersArray.find(user => user.id === msg.from);
   const toUser = usersArray.find(user => user.id === msg.to);
+  inviteUser = fromUser;
 
   log("Received video chat offer from " + fromUser.displayName + " to " + toUser.displayName);
   if (!pc) {
@@ -525,7 +526,7 @@ async function handleVideoOfferMsg(msg) {
   log("---> Creating and sending answer to caller");
 
   await pc.setLocalDescription();
-  sendRequest('videoAnswer', {
+  sendRequest('sdpAnswer', {
     from: peerID,
     to: fromUser.id,
     sdp: pc.localDescription

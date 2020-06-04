@@ -3,14 +3,10 @@ import * as socketio from 'socket.io';
 import { Logger } from './Logger';
 const logger = new Logger('Peer');
 import { ROLE } from './defines';
-import {types as mediasoupTypes} from 'mediasoup';
 import {Room} from './Room';
 
 export class Peer extends EventEmitter {
 	roler: ROLE;
-	producers =  new Map<string, mediasoupTypes.Producer>();
-	transports = new Map<string, mediasoupTypes.WebRtcTransport>();
-	consumers = new Map<string, mediasoupTypes.Consumer>();
 	closed = false;
 	joined = false;
 	displayName: string;
@@ -21,8 +17,6 @@ export class Peer extends EventEmitter {
 
 	disconnectCheck = 0;
 	intervalHandler;
-
-	rtpCapabilities: mediasoupTypes.RtpCapabilities;
 
 	constructor(
 		public id: string, 
@@ -42,7 +36,6 @@ export class Peer extends EventEmitter {
 		logger.info('peer %s call close()', this.id);
 
 		this.closed = true;
-		this.closeResource();
 
 		if (this.socket){
 			this.socket.disconnect(true);
@@ -65,25 +58,6 @@ export class Peer extends EventEmitter {
 		this.handlePeer();
 	}
 
-	private closeResource() {
-		this.producers.forEach((producer) => {
-			producer.close();
-		});
-
-		this.consumers.forEach((consumer) => {
-			clearInterval(consumer.appData.intervalHandler);
-			consumer.close();
-		});
-
-		this.transports.forEach((transport) => {
-			transport.close();
-		});
-
-		this.transports.clear();
-		this.producers.clear();
-		this.consumers.clear();
-	}
-
 	private handlePeer() {
 		this.socket.on('disconnect', (reason) => {
 			if (this.closed) {
@@ -97,92 +71,6 @@ export class Peer extends EventEmitter {
 		this.socket.on('error', (error) => {
 			logger.info('socket error, peer: %s, error: %s', this.id, error);
 		});
-	}
-
-	addTransport(id: string, transport: mediasoupTypes.WebRtcTransport) {
-		this.transports.set(id, transport);
-	}
-
-	getTransport(id: string) {
-		return this.transports.get(id);
-	}
-
-	getConsumerTransport() {
-		return Array.from(this.transports.values())
-			.find((t: any) => t.appData.consuming);
-	}
-
-	removeTransport(id: string) {
-		this.transports.delete(id);
-	}
-
-	addProducer(id: string, producer: mediasoupTypes.Producer) {
-		this.producers.set(id, producer);
-	}
-
-	getProducer(id: string) {
-		return this.producers.get(id);
-	}
-
-	removeProducer(id: string) {
-		this.producers.delete(id);
-	}
-
-	addConsumer(id: string, consumer: mediasoupTypes.Consumer) {
-		this.consumers.set(id, consumer);
-	}
-
-	getConsumer(id: string) {
-		return this.consumers.get(id);
-	}
-
-	removeConsumer(id: string) {
-		const consumer = this.consumers.get(id);
-		if ( consumer ) {
-			consumer.close();
-			clearInterval(consumer.appData.intervalHandler);
-		}
-		this.consumers.delete(id);
-	}
-
-	statusReport() {
-		let transportReport = new Array<any>();
-		this.transports.forEach(value => {
-			transportReport.push({
-				transportId: value.id,
-				closed: value.closed,
-			});
-		});
-
-		let producerReport = new Array<any>();
-		this.producers.forEach(value => {
-			producerReport.push({
-				producerId: value.id,
-				closed: value.closed,
-				kind: value.kind,
-				type: value.type,
-			});
-		});
-
-		let consumerReport = new Array<any>();
-		this.consumers.forEach(value => {
-			consumerReport.push({
-				consumerId: value.id,
-				closed: value.closed,
-				kind: value.kind,
-				producerId: value.producerId,
-				type: value.type,
-			});
-		});
-
-		return {
-			...this.peerInfo(),
-			joined: this.joined,
-			closed: this.closed,
-			transports: transportReport,
-			producers: producerReport,
-			consumers: consumerReport,
-		};
 	}
 
 	peerInfo() {

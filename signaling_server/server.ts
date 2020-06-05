@@ -10,7 +10,7 @@ import * as socketio from 'socket.io';
 import yargs from 'yargs';
 import { connectLogger, getLogger, configure } from 'log4js';
 configure('./log4js.json');
-const logger = getLogger();
+const logger = getLogger('Server');
 
 const helmet = require('helmet');
 const cors = require('cors');
@@ -109,7 +109,7 @@ const runWebSocketServer = async () => {
 		pingInterval: 5000,
 	});
 
-	logger.info("run socketio server....");
+	logger.info("Running socketio server....");
 
 	io.on('connection', async (socket) => {
 		const { roomId, peerId } = socket.handshake.query;

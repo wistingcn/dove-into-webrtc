@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import {Peer} from './Peer';
 import { getLogger } from 'log4js';
-const logger = getLogger();
+const logger = getLogger('Room');
 
 export class Room extends EventEmitter {
 	static async create(roomId:string ) {

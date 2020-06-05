@@ -20,14 +20,14 @@ let isConnected = false;
 let selectedCodec = 'VP8';
 let usersArray = null;
 let inviteUser = null;
+
 const signaling_host = location.host;
 const signaling_port = location.port || 443;
 const roomID = 'signalingtestroom';
 const peerID = makeRandomString(8);
 const socketURL =  `wss://${signaling_host}:${signaling_port}/?roomId=${roomID}&peerId=${peerID}`;
 
-let websock = null; //WebSocket
-let socket = null; //Socket.IO client
+let signaling = null; // signaling client
 
 function getCapabilitiesCodec(codec) {
   let capCodes = RTCRtpSender.getCapabilities('video').codecs;
@@ -60,6 +60,7 @@ window.onload = () => {
   log("Hostname: " + myHostname);
 
   console.log('document loaded');
+  signaling = new SignalingClient();
 }
 
 function replaceBackground() {
@@ -153,54 +154,13 @@ function error(text) {
   console.log(text);
 }
 
-function sendRequest(method, data = null) {
-  return new Promise((resolve, reject) => {
-    if (!socket || !socket.connected) {
-      reject('No socket connection.');
-    } else {
-      socket.emit('request', { method, data },
-        timeoutCallback((err, response) => {
-          if (err) {
-            error('sendRequest %s timeout! socket: %o', method);
-            reject(err);
-          } else {
-            resolve(response);
-          }
-        })
-      );
-    }
-  });
-}
-
-function timeoutCallback(callback) {
-  let called = false;
-
-  const interval = setTimeout(() => {
-    if (called) {
-      return;
-    }
-    called = true;
-    callback(new Error('Request timeout.'));
-  }, 5000);
-
-  return (...args) => {
-    if (called) {
-      return;
-    }
-    called = true;
-    clearTimeout(interval);
-
-    callback(...args);
-  };
-}
 
 function connect() {
   log(`Connecting to signaling server: ${socketURL}`);
-  socket = io.connect(socketURL);
-
-  socket.on('connect', async () => {
+  signaling.connect(socketURL);
+  signaling.onConnected = async () => {
     log('SocketIO client connected to signaling server!');
-    const allusers = await sendRequest('join', {
+    const allusers = await signaling.sendRequest('join', {
       displayName: document.getElementById("name").value
     });
 
@@ -209,60 +169,23 @@ function connect() {
     } else if (allusers.joined) {
       log("You have joined!");
     }
+  };
 
-  });
+  signaling.onNewPeer = (msg) => {
+    handleUserlistMsg([msg]);
+  };
 
-  socket.on('disconnect', () => {
-    error('*** SocketIO disconnected!');
-  });
+  signaling.onSdpOffer = (msg) => {
+    handleVideoOfferMsg(msg);
+  };
 
-  socket.on('connect_error', (err) => {
-    error('*** SocketIO client connect error!' + err);
-  });
+  signaling.onSdpAnswer = (msg) => {
+    handleVideoAnswerMsg(msg);
+  }
 
-  socket.on('connect_timeout', () => {
-    error('*** SocketIO client connnect timeout!');
-  });
-
-  socket.on('error', () => {
-    error('*** SocketIO error occors !' + error.name);
-  });
-  socket.on('notification', async (notification) => {
-    const msg = notification.data;
-    log("Receive'" + notification.method + "' message: " + JSON.stringify(msg));
-    switch(notification.method) {
-      case 'newPeer':
-        handleUserlistMsg([msg]);
-        break;
-      case 'sdpAnswer':
-        handleVideoAnswerMsg(msg);
-        break;
-      case 'sdpOffer':
-        handleVideoOfferMsg(msg);
-        break;
-      case 'newIceCandidate' :
-        handleNewICECandidateMsg(msg);
-        break;
-    }
-  });
-
-  socket.on('username', (msg) => {
-    log("Receive'" + msg.type + "' message: " + JSON.stringify(msg));
-    text = "<b>User <em>" + msg.name + "</em> signed in at " + timeStr + "</b><br>";
-  });
-
-  socket.on('video-answer', (msg) => {
-    log("Receive'" + msg.type + "' message: " + JSON.stringify(msg));
-  });
-
-  socket.on('video-offer', (msg) => {
-    log("Receive'" + msg.type + "' message: " + JSON.stringify(msg));
-  });
-
-  socket.on('new-ice-candidate', (msg) => {
-    log("Receive'" + msg.type + "' message: " + JSON.stringify(msg));
+  signaling.onNewIceCandidate = (msg) => {
     handleNewICECandidateMsg(msg);
-  });
+  };
 }
 
 function createPeerConnection() {
@@ -333,8 +256,7 @@ async function handleNegotiationNeededEvent() {
     await pc.setLocalDescription();
 
     log("---> Sending the offer to the remote peer");
-
-    sendRequest('sdpOffer', {
+    signaling.sendRequest('sdpOffer', {
       from: peerID,
       to: inviteUser.id,
       sdp: pc.localDescription
@@ -354,7 +276,7 @@ function handleICECandidateEvent(event) {
   if (event.candidate) {
     log("*** Outgoing ICE candidate: " + event.candidate.candidate);
 
-    sendRequest('newIceCandidate', {
+    signaling.sendRequest('newIceCandidate', {
       from: peerID,
       to: inviteUser.id,
       candidate: event.candidate
@@ -526,7 +448,7 @@ async function handleVideoOfferMsg(msg) {
   log("---> Creating and sending answer to caller");
 
   await pc.setLocalDescription();
-  sendRequest('sdpAnswer', {
+  signaling.sendRequest('sdpAnswer', {
     from: peerID,
     to: fromUser.id,
     sdp: pc.localDescription

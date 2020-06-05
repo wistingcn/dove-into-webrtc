@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import * as socketio from 'socket.io';
 import {Room} from './Room';
 import { getLogger } from 'log4js';
-const logger = getLogger();
+const logger = getLogger('Peer');
 
 export class Peer extends EventEmitter {
 	closed = false;

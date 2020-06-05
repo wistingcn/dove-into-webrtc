@@ -3,6 +3,8 @@ import * as socketio from 'socket.io';
 import {Room} from './Room';
 import { getLogger } from 'log4js';
 const logger = getLogger('Peer');
+const DISCONNECT_CHECK_COUNT = 6;
+const DISCONNECT_CHECK_DELAY = 3000; //ms
 
 export class Peer extends EventEmitter {
 	closed = false;
@@ -12,6 +14,8 @@ export class Peer extends EventEmitter {
 	platform: string;
 	address: string;
 	enterTime = Date.now();
+	disconnectCheck = 0;
+	intervalHandler;
 
 	constructor(
 		public id: string, 
@@ -57,12 +61,29 @@ export class Peer extends EventEmitter {
 			}
 
 			logger.debug('"socket disconnect" event [id:%s], reason: %s', this.id, reason);
-			this.close();
+			this.intervalHandler = setInterval(() => {
+				this.checkClose();
+			}, DISCONNECT_CHECK_DELAY);
 		});
 
 		this.socket.on('error', (error) => {
 			logger.info('socket error, peer: %s, error: %s', this.id, error);
 		});
+	}
+
+	public checkClose() {
+		if (!this.socket.connected) {
+			this.disconnectCheck++;
+
+			if ( this.disconnectCheck > DISCONNECT_CHECK_COUNT ) {
+				clearInterval(this.intervalHandler);
+				this.close();
+			}
+		} else {
+			clearInterval(this.intervalHandler);
+			this.intervalHandler = null;
+			this.disconnectCheck = 0;
+		}
 	}
 
 	peerInfo() {

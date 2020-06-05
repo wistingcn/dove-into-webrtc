@@ -2,7 +2,6 @@ process.title = 'signaling-server';
 
 import * as fs from 'fs';
 import * as https from 'https';
-import * as http from 'http';
 import express from 'express';
 import { Room } from './lib/Room';
 import { Peer } from './lib/Peer';
@@ -55,13 +54,9 @@ let httpsServer: https.Server;
 let io: socketio.Server;
 
 async function run() {
-	// Run HTTPS server.
 	await runHttpsServer();
-
-	// Run WebSocketServer.
 	await runWebSocketServer();
 
-	// Log rooms status every 300 seconds.
 	setInterval(() => {
 		let all = 0;
 		let closed = 0;
@@ -83,7 +78,7 @@ async function run() {
 	}, 10000);
 }
 
-const runHttpsServer = async () => {
+const runHttpsServer = () => {
 	app.use('/', express.static('web', {
 		maxAge: '-1'
 	}));
@@ -95,11 +90,6 @@ const runHttpsServer = async () => {
 	httpsServer = https.createServer(tls, app);
 	httpsServer.listen(443, () => {
 		logger.info(`Listening at 443...`);
-	});
-
-	const httpServer = http.createServer(app);
-	httpServer.listen(80, () => {
-		logger.info(`Listening at 80...`);
 	});
 }
 

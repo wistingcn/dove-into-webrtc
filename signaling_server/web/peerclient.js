@@ -164,7 +164,7 @@ function connect() {
       displayName: document.getElementById("name").value
     });
 
-    if(allusers.peers.length) {
+    if(allusers.peers && allusers.peers.length) {
       handleUserlistMsg(allusers.peers, true);
     } else if (allusers.joined) {
       log("You have joined!");

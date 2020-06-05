@@ -1,4 +1,5 @@
-# wiser-server
+# signaling-server
+使用Typescript + Express + Socket.IO实现的WebRTC 信令服务器,可以作为模板程序使用.
 
 ## 安装
 ```

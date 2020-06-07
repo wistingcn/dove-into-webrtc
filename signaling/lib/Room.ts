@@ -3,6 +3,10 @@ import {Peer} from './Peer';
 import { getLogger } from 'log4js';
 const logger = getLogger('Room');
 
+interface Request {
+	method: string;
+	data: any;
+}
 export class Room extends EventEmitter {
 	static async create(roomId:string ) {
 		logger.info('create() [roomId:"%s"]', roomId);
@@ -61,7 +65,7 @@ export class Room extends EventEmitter {
 	}
 
 	public setupSocketHandler(peer: Peer) {
-		peer.socket.on('request', (request, cb) => {
+		peer.socket.on('request', (request:Request, cb) => {
 			this.setActive();
 
 			logger.debug(
@@ -116,7 +120,7 @@ export class Room extends EventEmitter {
 		return this.peers.size === 0;
 	}
 
-	private async _handleSocketRequest(peer: Peer, request, cb) {
+	private async _handleSocketRequest(peer: Peer, request: Request, cb) {
 		switch (request.method) {
 			case 'join':
 			{
@@ -197,50 +201,6 @@ export class Room extends EventEmitter {
 				cb(500, `unknown request.method "${request.method}"`);
 			}
 		}
-	}
-
-
-	_timeoutCallback(callback) {
-		let called = false;
-
-		const interval = setTimeout(() => {
-				if (called) {
-					return;
-				}
-
-				called = true;
-				callback(new Error('Request timeout.'));
-			},
-			10000
-		);
-
-		return (...args) => {
-			if (called) {
-				return;
-			}
-
-			called = true;
-			clearTimeout(interval);
-
-			callback(...args);
-		};
-	}
-
-	_request(socket: SocketIO.Socket, method: string, data = {}) {
-		return new Promise((resolve, reject) => {
-			socket.emit(
-				'request',
-				{ method, data },
-				this._timeoutCallback((err, response) => {
-					if (err) {
-						reject(err);
-					}
-					else {
-						resolve(response);
-					}
-				})
-			);
-		});
 	}
 
 	_notification(socket, method, data = {}, broadcast = false) {

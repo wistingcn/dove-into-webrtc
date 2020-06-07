@@ -13,7 +13,6 @@ let targetUserId = null;
 let pc = null; // local RTCPeerConnection
 let transceiver = null; 
 let webcamStream = null; 
-let myHostname = null;
 let logBox = null;
 let chroma = null
 let isConnected = false;
@@ -25,7 +24,7 @@ const signaling_host = location.host;
 const signaling_port = location.port || 443;
 const roomID = 'signalingtestroom';
 const peerID = makeRandomString(8);
-const socketURL =  `wss://${signaling_host}:${signaling_port}/?roomId=${roomID}&peerId=${peerID}`;
+const socketURL =  `/?roomId=${roomID}&peerId=${peerID}`;
 
 let signaling = null; // signaling client
 
@@ -53,13 +52,6 @@ window.onload = () => {
     console.error('get logbox error!');
   }
 
-  myHostname = window.location.hostname;
-  if (!myHostname) {
-    myHostname = "localhost";
-  }
-  log("Hostname: " + myHostname);
-
-  console.log('document loaded');
   signaling = new SignalingClient();
 }
 

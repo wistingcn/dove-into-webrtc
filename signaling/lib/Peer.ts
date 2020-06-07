@@ -36,6 +36,11 @@ export class Peer extends EventEmitter {
 
 		this.closed = true;
 
+		if (this.intervalHandler ) {
+			clearInterval(this.intervalHandler);
+			this.intervalHandler = null;
+		}
+
 		if (this.socket){
 			this.socket.disconnect(true);
 		}
@@ -76,7 +81,6 @@ export class Peer extends EventEmitter {
 			this.disconnectCheck++;
 
 			if ( this.disconnectCheck > DISCONNECT_CHECK_COUNT ) {
-				clearInterval(this.intervalHandler);
 				this.close();
 			}
 		} else {

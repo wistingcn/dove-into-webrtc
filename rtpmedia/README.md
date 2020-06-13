@@ -1,4 +1,8 @@
 该实例运行于NodeJS环境，在Windows/Mac/Linux系统下都可以正常运行，在运行以下命令前，需要先从GitHub上获取项目代码。
+- 动态设置视频码率
+- vp8/vp9/h264编码切换
+- 将chroma-keying实现的虚拟背景视频传输到对等端
+
 ## 在项目根目录下安装依赖包：
 ```bash
 # 该命令安装依赖包：http-serve/websocket/yargs

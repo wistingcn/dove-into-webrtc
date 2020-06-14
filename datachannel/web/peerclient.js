@@ -22,6 +22,7 @@ const signaling_port = location.port || 443;
 const roomID = 'signalingtestroom';
 const peerID = makeRandomString(8);
 const socketURL =  `/?roomId=${roomID}&peerId=${peerID}`;
+let lastReadTime = 0;
 
 let dcFile = null; // Data Channel for file trans
 let channelId = 0;
@@ -92,45 +93,57 @@ function sendFile() {
   }));
 
   sendProgress.max = file.size;
-  const chunkSize = pc.sctp.maxMessageSize;
+  readFileData(file);
+}
+
+function readFileData(file) {
   const fileReader = new FileReader();
   let offset = 0;
-  fileReader.addEventListener('error', error => console.error('Error reading file:', error));
-  fileReader.addEventListener('abort', event => console.log('File reading aborted:', event));
-  fileReader.addEventListener('load', async e => {
+
+  fileReader.onerror = error => console.error('Error reading file:', error);
+  fileReader.onabort = event => console.log('File reading aborted:', event);
+  fileReader.onload = async e => {
+    // 缓存队列过大
     if (dcFile.bufferedAmount > 65535) {
+      let timeoutHandler = null;
+      // 等待缓存队列降到阈值之下
       await new Promise(resolve => {
         dcFile.onbufferedamountlow = (ev) => {
           log("bufferedamountlow event! bufferedAmount: " + dcFile.bufferedAmount);
           resolve(0);
+          if (timeoutHandler) {
+            clearTimeout(timeoutHandler);
+          }
         }
       }, reject => {
-        setTimeout(() => {
+        // 设置等待超时
+        timeoutHandler = setTimeout(() => {
           reject('Timeout')
         }, 10000);
       });
     }
 
+    // 可以发送数据了
     dcFile.send(e.target.result);
     offset += e.target.result.byteLength;
     sendProgress.value = offset;
     if (offset < file.size) {
-      readSlice(offset);
+      readFileSlice(fileReader, file, offset);
     }
-  });
-
-  let time = (new Date()).getTime();
-  const readSlice = o => {
-    console.log('readSlice ', o);
-    const slice = file.slice(offset, o + chunkSize);
-    fileReader.readAsArrayBuffer(slice);
-
-    const interval = (new Date()).getTime() - time;
-    bitrateSpan.textContent = `${Math.round(chunkSize * 8 /interval)}kbps`;
-    time = (new Date()).getTime();
   };
-  readSlice(0);
+
+  readFileSlice(fileReader, file, 0);
 }
+
+function readFileSlice(fileReader, file, o){
+  const chunkSize = pc.sctp.maxMessageSize;
+  const slice = file.slice(o, o + chunkSize);
+  fileReader.readAsArrayBuffer(slice);
+
+  const interval = (new Date()).getTime() - lastReadTime;
+  bitrateSpan.textContent = `${Math.round(chunkSize * 8 /interval)}kbps`;
+  lastReadTime = (new Date()).getTime();
+};
 
 function newDataChannel() {
   log("*** Create Data Channel.");
@@ -177,32 +190,34 @@ function connect() {
 
 function setupDataChannelEvent(channel) {
   channel.onopen = () => {
-    log("*** Data Channel opened !!! - " + channel.protocol);
+    log(`Data Channel opened !!! - '${channel.protocol}'`);
   }
   channel.onerror = (ev) => {
     const err = ev.error;
-    error("**** Data Channel error! errorDetail: " + err.errorDetail + ",error message: " + err.message + " - " +channel.protocol);
+    error(`Data Channel '${channel.protocol}' error! ${err.errorDetail} - ${err.message}`);
   }
 
-  channel.onmessage = (msg) => {
-    const data = msg.data;
+  channel.onmessage = (event) => {
+    handleDataMessage(channel, event.data);
+  }
+}
 
+function handleDataMessage(channel, data) {
     log(`Receive data channel message ,type: ${typeof(data)}`);
-    log(`Receive data channel message from '${channel.protocol}', size: ${data.byteLength}, data: ${JSON.stringify(data)}`);
-
     if (typeof(data) === 'string') {
+      log(`Receive string data from '${channel.protocol}', data: ${data}`);
       const mess = JSON.parse(data);
       if(mess.method === 'file') {
         receiveFile.reset();
         receiveFile.name = mess.name;
         receiveFile.size = mess.size;
-        log("Receive data channel string message, size: " + mess.size);
         receiveProgress.max = mess.size;
       }
 
       return;
     }
 
+    log(`Receive binary data from '${channel.protocol}', size: ${data.byteLength}`);
     receiveFile.buffer.push(data);
     receiveFile.receivedSize += data.byteLength;
     receiveProgress.value = receiveFile.receivedSize;
@@ -214,7 +229,6 @@ function setupDataChannelEvent(channel) {
     if(receiveFile.receivedSize === receiveFile.size) {
       downloadFile(receiveFile);
     }
-  }
 }
 
 function downloadFile(file) {

@@ -83,6 +83,10 @@ function error(text) {
   console.log(text);
 }
 
+fileInput.onchange = (e) => {
+  sendFileButton.disabled = false;
+}
+
 function sendFile() {
   const file = fileInput.files[0];
   log("select file, name: " + file.name + " size: " + file.size);
@@ -96,14 +100,13 @@ function sendFile() {
   readFileData(file);
 }
 
-function readFileData(file) {
-  const fileReader = new FileReader();
+async function readFileData(file) {
   let offset = 0;
-
-  fileReader.onerror = error => console.error('Error reading file:', error);
-  fileReader.onabort = event => console.log('File reading aborted:', event);
-  fileReader.onload = async e => {
-    // 缓存队列过大
+  let buffer = null;
+  const chunkSize = pc.sctp.maxMessageSize;
+  while(offset < file.size) {
+    const slice = file.slice(offset, offset + chunkSize);
+    buffer = await slice.arrayBuffer();
     if (dcFile.bufferedAmount > 65535) {
       let timeoutHandler = null;
       // 等待缓存队列降到阈值之下
@@ -115,35 +118,19 @@ function readFileData(file) {
             clearTimeout(timeoutHandler);
           }
         }
-      }, reject => {
-        // 设置等待超时
-        timeoutHandler = setTimeout(() => {
-          reject('Timeout')
-        }, 10000);
       });
     }
 
     // 可以发送数据了
-    dcFile.send(e.target.result);
-    offset += e.target.result.byteLength;
+    dcFile.send(buffer);
+    offset += buffer.byteLength;
     sendProgress.value = offset;
-    if (offset < file.size) {
-      readFileSlice(fileReader, file, offset);
-    }
-  };
 
-  readFileSlice(fileReader, file, 0);
+    const interval = (new Date()).getTime() - lastReadTime;
+    bitrateSpan.textContent = `${Math.round(chunkSize * 8 /interval)}kbps`;
+    lastReadTime = (new Date()).getTime();
+  }
 }
-
-function readFileSlice(fileReader, file, o){
-  const chunkSize = pc.sctp.maxMessageSize;
-  const slice = file.slice(o, o + chunkSize);
-  fileReader.readAsArrayBuffer(slice);
-
-  const interval = (new Date()).getTime() - lastReadTime;
-  bitrateSpan.textContent = `${Math.round(chunkSize * 8 /interval)}kbps`;
-  lastReadTime = (new Date()).getTime();
-};
 
 function newDataChannel() {
   log("*** Create Data Channel.");
@@ -191,6 +178,7 @@ function connect() {
 function setupDataChannelEvent(channel) {
   channel.onopen = () => {
     log(`Data Channel opened !!! - '${channel.protocol}'`);
+    fileInput.disabled = false;
   }
   channel.onerror = (ev) => {
     const err = ev.error;

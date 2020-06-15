@@ -27,20 +27,19 @@ let lastReadTime = 0;
 let dcFile = null; // Data Channel for file trans
 let channelId = 0;
 let caller = false;
+const logBox = document.querySelector(".logbox");
 
 const fileInput = document.querySelector('input#fileInput');
 const downloadAnchor = document.querySelector('a#download');
 const sendProgress = document.querySelector('progress#sendProgress');
 const receiveProgress = document.querySelector('progress#receiveProgress');
-const statusMessage = document.querySelector('span#status');
 const sendFileButton = document.querySelector('button#sendFile');
-const logBox = document.querySelector(".logbox");
 const bitrateSpan = document.querySelector('span#bitrate');
 
 const signaling = new SignalingClient();
 createPeerConnection();
 
-class peerFile {
+class PeerFile {
   constructor(){}
   reset() {
     this.name = '';
@@ -51,7 +50,7 @@ class peerFile {
   }
 }
 
-const receiveFile = new peerFile();
+const receiveFile = new PeerFile();
 
 function log(text) {
   const time = new Date();
@@ -108,15 +107,11 @@ async function readFileData(file) {
     const slice = file.slice(offset, offset + chunkSize);
     buffer = await slice.arrayBuffer();
     if (dcFile.bufferedAmount > 65535) {
-      let timeoutHandler = null;
       // 等待缓存队列降到阈值之下
       await new Promise(resolve => {
         dcFile.onbufferedamountlow = (ev) => {
           log("bufferedamountlow event! bufferedAmount: " + dcFile.bufferedAmount);
           resolve(0);
-          if (timeoutHandler) {
-            clearTimeout(timeoutHandler);
-          }
         }
       });
     }
@@ -126,6 +121,7 @@ async function readFileData(file) {
     offset += buffer.byteLength;
     sendProgress.value = offset;
 
+    // 更新发送速率
     const interval = (new Date()).getTime() - lastReadTime;
     bitrateSpan.textContent = `${Math.round(chunkSize * 8 /interval)}kbps`;
     lastReadTime = (new Date()).getTime();
@@ -193,6 +189,7 @@ function setupDataChannelEvent(channel) {
 function handleDataMessage(channel, data) {
     log(`Receive data channel message ,type: ${typeof(data)}`);
     if (typeof(data) === 'string') {
+      // 文件元数据
       log(`Receive string data from '${channel.protocol}', data: ${data}`);
       const mess = JSON.parse(data);
       if(mess.method === 'file') {
@@ -205,16 +202,21 @@ function handleDataMessage(channel, data) {
       return;
     }
 
+    // 文件内容数据
     log(`Receive binary data from '${channel.protocol}', size: ${data.byteLength}`);
     receiveFile.buffer.push(data);
     receiveFile.receivedSize += data.byteLength;
+
+    // 更新进度条
     receiveProgress.value = receiveFile.receivedSize;
 
+    // 更新接收速率
     const interval = (new Date()).getTime() - receiveFile.time;
     bitrateSpan.textContent = ` ${Math.round(data.byteLength * 8 / interval)}kbps`;
     receiveFile.time = (new Date()).getTime();
 
     if(receiveFile.receivedSize === receiveFile.size) {
+      // 文件接收完了，开始下载
       downloadFile(receiveFile);
     }
 }

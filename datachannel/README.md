@@ -18,3 +18,4 @@ sudo npm start
 ```
 https://localhost/
 ```
+为了演示数据通道建连效果，需要在至少两个浏览器窗口打开以上地址。

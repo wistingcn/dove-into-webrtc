@@ -27,13 +27,15 @@ let lastReadTime = 0;
 let dcFile = null; // Data Channel for file trans
 let channelId = 0;
 let caller = false;
-const logBox = document.querySelector(".logbox");
+const chatBox = document.querySelector(".chatbox");
 
 const fileInput = document.querySelector('input#fileInput');
+const textInput = document.querySelector('input#textInput');
 const downloadAnchor = document.querySelector('a#download');
 const sendProgress = document.querySelector('progress#sendProgress');
 const receiveProgress = document.querySelector('progress#receiveProgress');
 const sendFileButton = document.querySelector('button#sendFile');
+const sendTextButton = document.querySelector('input#sendText');
 const bitrateSpan = document.querySelector('span#bitrate');
 
 const signaling = new SignalingClient();
@@ -53,37 +55,40 @@ class PeerFile {
 const receiveFile = new PeerFile();
 
 function log(text) {
-  const time = new Date();
-  const pText = `<p>[${time.toLocaleTimeString()}] ${text}</p>`;
-
-  logBox.innerHTML += pText;
-  logBox.scrollTop = logBox.scrollHeight - logBox.clientHeight;
-
-  console.log(text);
-}
-
-function warn(text) {
-  const time = new Date();
-  const pText = `<p class="warn">[${time.toLocaleTimeString()}] ${text}</p>`;
-
-  logBox.innerHTML += pText;
-  logBox.scrollTop = logBox.scrollHeight - logBox.clientHeight;
-
   console.log(text);
 }
 
 function error(text) {
-  const time = new Date();
-  const pText = `<p class="error">[${time.toLocaleTimeString()}] ${text}</p>`;
-
-  logBox.innerHTML += pText;
-  logBox.scrollTop = logBox.scrollHeight - logBox.clientHeight;
-
-  console.log(text);
+  console.error(text);
 }
 
 fileInput.onchange = (e) => {
   sendFileButton.disabled = false;
+}
+
+textInput.onkeypress = (e) => {
+  if(e.keyCode === 13 ) {
+    handleSendButton();
+  }
+}
+
+function handleSendButton() {
+  const text = textInput.value;
+  if (!text.length) return;
+
+  dcFile.send(JSON.stringify({
+      text: text,
+      method: 'message',
+      id: peerID
+    }
+  ));
+  textInput.value = '';
+
+  const time = new Date();
+  const timeString = `${time.getHours()}:${time.getMinutes()}`;
+  const html = `<div class="sentMessage"><div><span style="font-size: x-small">${timeString}</span><b> 我</b></div><div><span class="sentText">${text}</span></div></div>`;
+  chatBox.innerHTML += html;
+  chatBox.scrollTop = chatBox.scrollHeight - chatBox.clientHeight;
 }
 
 function sendFile() {
@@ -175,6 +180,8 @@ function setupDataChannelEvent(channel) {
   channel.onopen = () => {
     log(`Data Channel opened !!! - '${channel.protocol}'`);
     fileInput.disabled = false;
+    textInput.disabled = false;
+    sendTextButton.disabled = false;
   }
   channel.onerror = (ev) => {
     const err = ev.error;
@@ -197,6 +204,8 @@ function handleDataMessage(channel, data) {
         receiveFile.name = mess.name;
         receiveFile.size = mess.size;
         receiveProgress.max = mess.size;
+      } else if (mess.method === 'message') {
+        handleReceivedMessage(mess);
       }
 
       return;
@@ -219,6 +228,15 @@ function handleDataMessage(channel, data) {
       // 文件接收完了，开始下载
       downloadFile(receiveFile);
     }
+}
+
+function handleReceivedMessage(msg) {
+  const time = new Date();
+  const timeString = `${time.getHours()}:${time.getMinutes()}`;
+  const html = `<div><div><b>${msg.id} </b><span style="font-size: x-small">${timeString}</span></div><div><span class="receivedMessage">${msg.text}</span></div></div>`;
+  log(html);
+  chatBox.innerHTML += html;
+  chatBox.scrollTop = chatBox.scrollHeight - chatBox.clientHeight;
 }
 
 function downloadFile(file) {
@@ -257,7 +275,7 @@ function handleDataChannel(event) {
 }
 
 function handleConnectionStateChange() {
-  warn("*** Connection state changed to: " + pc.connectionState);
+  log("*** Connection state changed to: " + pc.connectionState);
   switch (pc.connectionState) {
     case 'connected' :
       isConnected = true;
@@ -266,7 +284,7 @@ function handleConnectionStateChange() {
       isConnected = false;
       break;
     case 'failed' :
-      warn("Connection failed, now restartIce()...");
+      log("Connection failed, now restartIce()...");
       pc.restartIce();
       setTimeout(()=> {
         if(pc.iceConnectionState !== 'connected') {
@@ -307,7 +325,7 @@ async function handleNegotiationNeededEvent() {
 }
 
 function handleTrackEvent(event) {
-  warn("*** Track event");
+  log("*** Track event");
   document.getElementById("received_video").srcObject = event.streams[0];
 }
 
@@ -324,11 +342,11 @@ function handleICECandidateEvent(event) {
 }
 
 function handleICEConnectionStateChangeEvent(event) {
-  warn("*** ICE connection state changed to " + pc.iceConnectionState);
+  log("*** ICE connection state changed to " + pc.iceConnectionState);
 }
 
 function handleSignalingStateChangeEvent(event) {
-  warn("*** WebRTC signaling state changed to: " + pc.signalingState);
+  log("*** WebRTC signaling state changed to: " + pc.signalingState);
   switch(pc.signalingState) {
     case "stable":
       break;
@@ -339,7 +357,7 @@ function handleSignalingStateChangeEvent(event) {
 }
 
 function handleICEGatheringStateChangeEvent(event) {
-  warn("*** ICE gathering state changed to: " + pc.iceGatheringState);
+  log("*** ICE gathering state changed to: " + pc.iceGatheringState);
 }
 
 function handleUserlistMsg(users, init=false) {
@@ -367,10 +385,10 @@ function handleUserlistMsg(users, init=false) {
 function closeVideoCall() {
   const localVideo = document.getElementById("local_video");
 
-  warn("Closing the call");
+  log("Closing the call");
 
   if (pc) {
-    warn("--> Closing the peer connection");
+    log("--> Closing the peer connection");
 
     pc.ontrack = null;
     pc.onnicecandidate = null;

@@ -196,15 +196,17 @@ function setupDataChannelEvent(channel) {
 function handleDataMessage(channel, data) {
     log(`Receive data channel message ,type: ${typeof(data)}`);
     if (typeof(data) === 'string') {
-      // 文件元数据
+      // 字符串
       log(`Receive string data from '${channel.protocol}', data: ${data}`);
       const mess = JSON.parse(data);
       if(mess.method === 'file') {
+        // 文件元数据
         receiveFile.reset();
         receiveFile.name = mess.name;
         receiveFile.size = mess.size;
         receiveProgress.max = mess.size;
       } else if (mess.method === 'message') {
+        // 聊天消息
         handleReceivedMessage(mess);
       }
 

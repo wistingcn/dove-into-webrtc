@@ -27,8 +27,8 @@ let lastReadTime = 0;
 let dcFile = null; // Data Channel for file trans
 let channelId = 0;
 let caller = false;
-const chatBox = document.querySelector(".chatbox");
 
+const chatBox = document.querySelector(".chatbox");
 const fileInput = document.querySelector('input#fileInput');
 const textInput = document.querySelector('input#textInput');
 const downloadAnchor = document.querySelector('a#download');
@@ -37,6 +37,16 @@ const receiveProgress = document.querySelector('progress#receiveProgress');
 const sendFileButton = document.querySelector('button#sendFile');
 const sendTextButton = document.querySelector('input#sendText');
 const bitrateSpan = document.querySelector('span#bitrate');
+fileInput.onchange = (e) => {
+  sendFileButton.disabled = false;
+}
+
+textInput.onkeypress = (e) => {
+  if(e.keyCode === 13 ) {
+    handleSendButton();
+  }
+}
+
 
 const signaling = new SignalingClient();
 createPeerConnection();
@@ -60,16 +70,6 @@ function log(text) {
 
 function error(text) {
   console.error(text);
-}
-
-fileInput.onchange = (e) => {
-  sendFileButton.disabled = false;
-}
-
-textInput.onkeypress = (e) => {
-  if(e.keyCode === 13 ) {
-    handleSendButton();
-  }
 }
 
 function handleSendButton() {

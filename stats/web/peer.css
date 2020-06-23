@@ -1,0 +1,106 @@
+/*
+  Dove into Webrtc example for RTCPeerConnection
+*/
+
+html, body {
+  height: 100%;
+  font-family:'Open Sans', 'Lucida Grande', Arial, Helvetica, sans-serif;
+}
+
+.container {
+  display: grid;
+  min-width: 1250px;
+  height: 100%;
+  grid-template-areas: "infobox infobox statsChart"
+  "userlistbox chatbox camerabox"
+  "empty-container chat-controls chat-controls";
+  grid-template-columns: 10em 1fr 500px;
+  grid-template-rows: 16em 1fr;
+  grid-gap: 1rem;
+}
+
+.infobox {
+  grid-area: infobox;
+  overflow: auto;
+}
+
+.statsChart {
+  grid-area: statsChart;
+  overflow: auto;
+}
+
+.userlistbox {
+  grid-area: userlistbox;
+  border: 1px solid black;
+  margin:0;
+  padding:1px;
+  list-style:none;
+  line-height:1.1;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+
+.userlistbox li {
+  cursor: pointer;
+  padding: 1px;
+}
+
+.chatbox {
+  grid-area: chatbox;
+  border: 1px solid black;
+  margin: 0;
+  overflow-y: scroll;
+  padding: 1px;
+  padding: 0.1rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.camerabox {
+  grid-area: camerabox;
+  width: 500px;
+  border: 1px solid black;
+  display: block;
+  position:relative;
+  overflow:auto;
+}
+
+#received_video {
+  width: 100%;
+  height: 100%;
+  position:absolute;
+}
+
+/* The small "preview" view of your camera */
+#local_video {
+  width: 120px;
+  height: 90px;
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 4px black;
+}
+
+.empty-container {
+  grid-area: empty-container;
+}
+
+.chat-controls {
+  grid-area: chat-controls;
+  width: 100%;
+  height: 100%;
+}
+
+.receivedMessage {
+  background-color: gray;
+}
+
+.sentMessage {
+  align-self: flex-end;
+}
+
+.sentText{
+  background-color: green;
+}

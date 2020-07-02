@@ -19,6 +19,6 @@ ICE建连过程
 - 实现了信令客户端
 ## stats
 RTC 统计数据,使用Chart.js绘制图表,实时展现收发码率.
-## cordova-android
+## cordova
 使用Cordova构建的Android端WebRTC示例,演示了getUserMedia()获取摄像头并显示在首页.
 

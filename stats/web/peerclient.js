@@ -17,8 +17,6 @@ let isConnected = false;
 let usersArray = null;
 let inviteUser = null;
 
-let myChart = null;
-
 const signaling_host = location.host;
 const signaling_port = location.port || 443;
 const roomID = 'signalingtestroom';
@@ -29,12 +27,6 @@ let lastReadTime = 0;
 let dcFile = null; // Data Channel for file transfer
 let channelId = 0;
 let caller = false;
-
-let chartLabels = [];
-let chartVideoSent = [];
-let chartVideoReceive = [];
-let chartAudioSent = [];
-let chartAudioReceive = [];
 
 const chatBox = document.querySelector(".chatbox");
 const fileInput = document.querySelector('input#fileInput');
@@ -55,7 +47,6 @@ textInput.onkeypress = (e) => {
   }
 }
 
-
 const signaling = new SignalingClient();
 createPeerConnection();
 
@@ -70,6 +61,31 @@ class PeerFile {
   }
 }
 
+// Chart.js图表对象
+let myChart = null;
+// X轴显示数据
+let chartLabels = [];
+// 视频发送码率
+let chartVideoSent = [];
+// 视频接收码率
+let chartVideoReceive = [];
+// 音频发送码率
+let chartAudioSent = [];
+// 音频接收码率
+let chartAudioReceive = [];
+
+// 图表使用的颜色定义
+const chartColors = {
+  red: 'rgb(255, 99, 132)',
+  orange: 'rgb(255, 159, 64)',
+  yellow: 'rgb(255, 205, 86)',
+  green: 'rgb(75, 192, 192)',
+  blue: 'rgb(54, 162, 235)',
+  purple: 'rgb(153, 102, 255)',
+  grey: 'rgb(201, 203, 207)'
+};
+
+// 绘制图表
 drawChart();
 
 const receiveFile = new PeerFile();
@@ -569,16 +585,6 @@ function makeRandomString(length) {
 };
 
 
-const chartColors = {
-  red: 'rgb(255, 99, 132)',
-  orange: 'rgb(255, 159, 64)',
-  yellow: 'rgb(255, 205, 86)',
-  green: 'rgb(75, 192, 192)',
-  blue: 'rgb(54, 162, 235)',
-  purple: 'rgb(153, 102, 255)',
-  grey: 'rgb(201, 203, 207)'
-};
-
 function drawChart() {
   const ctx = document.getElementById('myChart').getContext('2d');
 
@@ -624,19 +630,14 @@ function drawChart() {
         hoverMode: 'index',
         stacked: false,
         title: {
-          display: false,
-          text: ''
+          display: true,
+          text: '实时码率(kbps)'
         },
         scales: {
           yAxes: [{
             type: 'linear',
             display: true,
             position: 'left',
-            id: 'kbps',
-            ticks: {
-              suggestedMin: 0,
-              suggestedMax: 10
-          }
           }],
         }
       }
@@ -706,6 +707,7 @@ function updateStats() {
     sentAudioBytes = outboundAudioRtpStat.bytesSent;
     sentVideoBytes = outboundVideoRtpStat.bytesSent;
 
+    // 将startTime递增，转换为字符串，追加到chartLabels数组中
     chartLabels.push(+startTime++);
 
     chartVideoReceive.push(Math.floor(receVideoRate * 8 / 1024));
@@ -713,11 +715,7 @@ function updateStats() {
     chartAudioReceive.push(Math.floor(receAudioRate * 8 / 1024));
     chartAudioSent.push(Math.floor(sentAudioRate * 8 / 1024));
 
+    // 更新图表
     myChart.update();
-
-    log(`Received Audio Rate: ${receAudioRate * 8}`);
-    log(`Send Audio Rate: ${sentAudioRate * 8}`);
-    log(`Received Video Rate: ${receVideoRate * 8}`);
-    log(`Send Video Rate: ${sentVideoRate * 8}`);
   }, 1000);
 }

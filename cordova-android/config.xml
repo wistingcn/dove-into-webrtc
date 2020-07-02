@@ -29,9 +29,5 @@
             <uses-feature android:name="android.hardware.camera" />
         </config-file>
     </platform>
-    <platform name="ios">
-        <allow-intent href="itms:*" />
-        <allow-intent href="itms-apps:*" />
-    </platform>
-		<icon src="res/icon.png" />
+	<icon src="res/icon.png" />
 </widget>

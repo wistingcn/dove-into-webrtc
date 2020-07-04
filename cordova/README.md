@@ -5,6 +5,7 @@
 ```
 sudo npm install -g cordova
 npm install
+
 ```
 
 ## 运行

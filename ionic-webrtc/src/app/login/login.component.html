@@ -1,0 +1,34 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>深入WebRTC直播技术</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content fullscreen="true">
+  <img src="assets/shapes.svg" class="slide-image" />
+
+  <form [formGroup]="ipForm" (ngSubmit)="onConnect()">
+    <ion-list>
+      <ion-item>
+        <ion-label position="stacked" color="primary">服务器IP：</ion-label>
+        <ion-input 
+          type="text" 
+          spellcheck="false" 
+          autocapitalize="off"
+          formControlName="ip"
+          required
+        >
+        </ion-input>
+      </ion-item>
+    </ion-list>
+
+    <ion-row>
+      <ion-col>
+        <ion-button 
+        type="submit"
+        expand="block">连接</ion-button>
+      </ion-col>
+    </ion-row>
+  </form>
+
+</ion-content>

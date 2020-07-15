@@ -1,0 +1,40 @@
+.videobox{
+  position: relative;
+  height: 50%;
+}
+.localVideo {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+}
+
+.remoteVideo {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: 120px;
+  height: 90px;
+}
+.chatbox {
+  max-height: 50%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  overflow-y: scroll;
+}
+
+.sentText{
+  background-color: green;
+}
+
+.receivedText{
+  background-color: gray;
+}
+
+.sentMessage {
+  align-self: flex-end;
+}

@@ -21,17 +21,19 @@ export class LoginComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    // 当收到建连成功事件后，跳转到tabs页面
     this.cs.connected$.subscribe((event) => {
       this.router.navigateByUrl('/tabs');
     });
   }
 
+  // 点击“连接”
   onConnect() {
     const ipAddr = this.ipForm.get('ip').value;
 
     const roomID = 'signalingtestroom';
     const peerID = this.makeRandomString(8);
-    const socketURL =  `wss://${ipAddr}:443/?roomId=${roomID}&peerId=${peerID}`;
+    const socketURL =  `wss://${ipAddr}:4433/?roomId=${roomID}&peerId=${peerID}`;
     console.log(socketURL);
     this.cs.connect(socketURL, peerID);
   }

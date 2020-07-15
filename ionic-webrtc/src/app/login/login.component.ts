@@ -22,7 +22,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     this.cs.connected$.subscribe((event) => {
-      this.router.navigateByUrl('tabs/tab1');
+      this.router.navigateByUrl('/tabs');
     });
   }
 

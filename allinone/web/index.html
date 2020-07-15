@@ -1,0 +1,56 @@
+<!doctype html>
+<!--
+  Dove into Webrtc example for RTCPeerConnection
+-->
+<html>
+<head>
+  <title>Dove into Webrtc example for DataChannel</title>
+  <meta charset="utf-8">
+  <link href="peer.css" rel="stylesheet">
+  <script type="text/javascript" src="signalingclient.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="adapter.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="infobox">
+      <h1>深入WebRTC直播技术-示例</h1>
+      <h2>点击用户列表里面的名称，建立WebRTC连接</h2>
+      <div>
+        输入用户名: 
+        <input id="name" type="text" maxlength="12" required autocomplete="username" inputmode="verbatim" placeholder="Username">
+        <input type="button" name="login" value="加入" onclick="connect()">
+      </div>
+      <div>
+        <form id="fileInfo">
+          <input type="file" id="fileInput" name="files"  disabled/>
+        </form>
+        <button id="sendFile" onclick="sendFile()" disabled>Send</button>
+      </div>
+      <div class="progress">
+        <span class="label">发送进度: </span>
+        <progress id="sendProgress" max="0" value="0"></progress>
+        <span class="label">接收进度: </span>
+        <progress id="receiveProgress" max="0" value="0"></progress>
+        <span id="bitrate"></span>
+      </div>
+      <div id="bitrate"></div>
+      <a id="download"></a>
+    </div>
+    <ul class="userlistbox"></ul>
+    <div class="chatbox">
+    </div>
+    <div class="camerabox">
+      <video id="received_video" autoplay></video>
+      <video id="local_video" autoplay muted></video>
+    </div>
+    <div class="empty-container"></div>
+    <div class="chat-controls">
+      聊天:<br/>
+      <input id="textInput" type="text" size="100" maxlength="256" placeholder="说点什么吧..." autocomplete="off" disabled>
+      <input type="button" id="sendText" name="send" value="发送" onclick="handleSendButton()" disabled>
+    </div>
+  </div>
+  <script type="text/javascript" src="peerclient.js"></script>
+</body>
+</html>

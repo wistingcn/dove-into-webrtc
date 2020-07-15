@@ -1,13 +1,16 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
+  <ion-toolbar color="primary">
     <ion-title>
-      {{cs.fromUser?.displayName}}
+      视频与数据通道
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div class="videobox">
+  <div *ngIf="!cs.webcamStream" class="ion-text-center">
+    <h3>请从电脑端建立WebRTC连接！</h3>
+  </div>
+  <div class="videobox" *ngIf="cs.webcamStream">
     <video class="localVideo" autoplay playsinline [srcObject]="cs.webcamStream"></video>
     <video class="remoteVideo" autoplay playsinline [srcObject]="cs.stream"></video>
   </div>
@@ -24,7 +27,7 @@
       </div>
       <div *ngIf="msg.type === 'rece'">
         <div>
-          <b>{{cs.fromUser.displayName}} </b>
+          <b>{{msg.displayName}} </b>
           <span style="font-size: x-small">{{msg.timeString}}</span>
         </div>
         <div>

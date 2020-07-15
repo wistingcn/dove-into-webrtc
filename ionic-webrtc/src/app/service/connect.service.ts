@@ -292,12 +292,15 @@ export class ConnectService {
       const msg = JSON.parse(event.data);
       console.log(msg);
 
+      const from = this.remotePeers.find(user => user.id === msg.id);
+
       const time = new Date();
       const timeString = `${time.getHours()}:${time.getMinutes()}`;
       this.chatMessages.push({
         ...msg,
         timeString,
-        type: 'rece'
+        type: 'rece',
+        displayName: from.displayName
       });
     };
   }

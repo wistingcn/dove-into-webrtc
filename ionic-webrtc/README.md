@@ -4,6 +4,8 @@
 * 支持Android和IOS
 ## 编译
 ```
+npm i -g cordova
+npm i -g native-run
 npm install -g @ionic/cli
 cnpm install
 ```

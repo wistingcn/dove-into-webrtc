@@ -6,6 +6,7 @@
 ```
 npm i -g cordova
 npm i -g native-run
+npm i -g cordova-res
 npm install -g @ionic/cli
 cnpm install
 ```

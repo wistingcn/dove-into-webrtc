@@ -26,7 +26,9 @@
     "@ionic/angular": "^5.0.0",
     "@types/socket.io-client": "^1.4.33",
     "cordova-android": "^8.1.0",
+    "cordova-ios": "^5.1.1",
     "cordova-plugin-device": "^2.0.3",
+    "cordova-plugin-iosrtc": "^6.0.12",
     "rxjs": "^6.5.5",
     "socket.io-client": "^2.3.0",
     "tslib": "^1.10.0",
@@ -70,10 +72,12 @@
       "cordova-plugin-ionic-webview": {
         "ANDROID_SUPPORT_ANNOTATIONS_VERSION": "27.+"
       },
-      "cordova-plugin-ionic-keyboard": {}
+      "cordova-plugin-ionic-keyboard": {},
+      "cordova-plugin-iosrtc": {}
     },
     "platforms": [
-      "android"
+      "android",
+      "ios"
     ]
   }
 }

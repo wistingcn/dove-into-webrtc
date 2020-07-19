@@ -9,7 +9,7 @@ import { Subject } from 'rxjs';
 export class ConnectService {
 
   socket = null;
-  pc = null;
+  pc: RTCPeerConnection;
   isConnected = false;
   peerId = '';
   fromUser;
@@ -108,7 +108,8 @@ export class ConnectService {
 
           console.log('---> Creating and sending answer to caller');
 
-          await this.pc.setLocalDescription();
+          await this.pc.createOffer();
+          await this.pc.setLocalDescription(this.pc.localDescription);
           this.sendRequest('sdpAnswer', {
             from: this.peerId,
             to: this.fromUser.id,
@@ -200,7 +201,7 @@ export class ConnectService {
           break;
         case 'failed':
           console.log('Connection failed, now restartIce()...');
-          this.pc.restartIce();
+          (this.pc as any).restartIce();
           setTimeout(() => {
             if (this.pc.iceConnectionState !== 'connected') {
               console.error(
@@ -251,7 +252,8 @@ export class ConnectService {
 
       try {
         console.log('---> Setting local description to the offer');
-        await this.pc.setLocalDescription();
+        await this.pc.createOffer();
+        await this.pc.setLocalDescription(this.pc.localDescription);
 
         console.log('---> Sending the offer to the remote peer');
         this.sendRequest('sdpOffer', {

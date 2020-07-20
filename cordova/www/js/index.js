@@ -5,6 +5,9 @@ const app = {
 
     onDeviceReady: function() {
         this.receivedEvent('deviceready');
+	if (window.device.platform === 'iOS') {
+	  cordova.plugins.iosrtc.registerGlobals();
+	}
     },
 
     receivedEvent: function(id) {

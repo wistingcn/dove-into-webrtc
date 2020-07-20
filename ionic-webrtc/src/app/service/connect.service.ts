@@ -29,28 +29,14 @@ export class ConnectService {
 
   connect(uri: string, peerId: string) {
     this.peerId = peerId;
-    console.log('peerId: ' + this.peerId);
 
     this.socket = io.connect(uri);
-    console.log(this.device.model + ',' + this.device.platform);
     this.socket.on('connect', async () => {
       this.onConnected();
     });
 
     this.socket.on('disconnect', () => {
       console.error('*** SocketIO disconnected!');
-    });
-
-    this.socket.on('connect_error', (err) => {
-      console.error('*** SocketIO client connect error!' + err);
-    });
-
-    this.socket.on('connect_timeout', () => {
-      console.error('*** SocketIO client connnect timeout!');
-    });
-
-    this.socket.on('error', (err) => {
-      console.error('*** SocketIO error occors !' + err.name);
     });
 
     this.socket.on('notification', async (notification) => {
@@ -60,29 +46,21 @@ export class ConnectService {
 
       switch (notification.method) {
         case 'newPeer':
-          console.log('Receive user list from server: ' + JSON.stringify(msg));
           this.remotePeers.push(msg);
           break;
         case 'sdpAnswer':
-          console.log('*** Receive video chat answer from: ' + this.fromUser.displayName);
-
           await this.pc.setRemoteDescription(msg.sdp).catch((err) => {
             console.error(err.name + ':' + err.message);
           });
           break;
         case 'sdpOffer':
-          console.log('Received video chat offer from ' + this.fromUser.displayName + ' to ' + toUser.displayName);
-
           if (this.pc.signalingState !== 'stable') {
-            console.log('But the signaling state isn\'t stable, so triggering rollback');
-
             await Promise.all([
               this.pc.setLocalDescription({ type: 'rollback' }),
               this.pc.setRemoteDescription(msg.sdp),
             ]);
             return;
           } else {
-            console.log('  - Setting remote description');
             await this.pc.setRemoteDescription(msg.sdp);
           }
 
@@ -106,8 +84,6 @@ export class ConnectService {
             }
           }
 
-          console.log('---> Creating and sending answer to caller');
-
           await this.pc.createAnswer().then(offer => {
             return this.pc.setLocalDescription(offer);
           });
@@ -119,7 +95,6 @@ export class ConnectService {
           });
           break;
         case 'newIceCandidate':
-          console.log('*** Received ICE candidate: ' + JSON.stringify(msg.candidate));
           try {
             await this.pc.addIceCandidate(msg.candidate);
           } catch (err) {
@@ -172,14 +147,12 @@ export class ConnectService {
   }
 
   async onConnected() {
-    console.log('SocketIO client connected to signaling server!');
     const allusers = await this.sendRequest('join', {
       displayName: this.peerId + '-' + 'ionic'
     }) as any;
 
     if (allusers.peers && allusers.peers.length) {
       this.remotePeers = allusers.peers;
-      console.log(JSON.stringify(this.remotePeers));
       this.createPeerConnection();
     } else if (allusers.joined) {
       alert('You have joined!');
@@ -189,11 +162,8 @@ export class ConnectService {
   }
 
   createPeerConnection() {
-    console.log('Setting up a connection...');
-
     this.pc = new RTCPeerConnection();
     this.pc.onconnectionstatechange = () => {
-      console.log('*** Connection state changed to: ' + this.pc.connectionState);
       switch (this.pc.connectionState) {
         case 'connected':
           this.isConnected = true;
@@ -202,7 +172,6 @@ export class ConnectService {
           this.isConnected = false;
           break;
         case 'failed':
-          console.log('Connection failed, now restartIce()...');
           (this.pc as any).restartIce();
           setTimeout(() => {
             if (this.pc.iceConnectionState !== 'connected') {
@@ -217,14 +186,8 @@ export class ConnectService {
       }
     };
 
-    this.pc.onicecandidateerror = (event) => {
-      console.error('ICE Candidate Error, errCode: ' + event.errorCode + ' errorText: ' + event.errorText);
-    };
-
     this.pc.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log('*** Outgoing ICE candidate: ' + event.candidate.candidate);
-
         this.sendRequest('newIceCandidate', {
           from: this.peerId,
           to: this.fromUser.id,
@@ -233,32 +196,16 @@ export class ConnectService {
       }
     };
 
-    this.pc.oniceconnectionstatechange = () => {
-      console.log('*** ICE connection state changed to ' + this.pc.iceConnectionState);
-    };
-
-    this.pc.onicegatheringstatechange = () => {
-      console.log('*** ICE gathering state changed to: ' + this.pc.iceGatheringState);
-    };
-
-    this.pc.onsignalingstatechange = () => {
-      console.log('*** WebRTC signaling state changed to: ' + this.pc.signalingState);
-    };
-
     this.pc.onnegotiationneeded = async () => {
-      console.log('*** Negotiation needed');
       if (this.pc.signalingState !== 'stable') {
-        console.log('-- The connection isn\'t stable yet; postponing...');
         return;
       }
 
       try {
-        console.log('---> Setting local description to the offer');
         await this.pc.createOffer().then(offer => {
           return this.pc.setLocalDescription(offer);
         });
 
-        console.log('---> Sending the offer to the remote peer');
         this.sendRequest('sdpOffer', {
           from: this.peerId,
           to: this.fromUser.id,
@@ -270,7 +217,6 @@ export class ConnectService {
     };
 
     this.pc.ontrack = (event: RTCTrackEvent) => {
-      console.log('*** Track event');
       this.stream = event.streams[0];
     };
 
@@ -288,15 +234,8 @@ export class ConnectService {
       console.log(`Data Channel opened !!! - '${channel.protocol}'`);
     };
 
-    channel.onerror = (ev) => {
-      const err = ev.error;
-      console.error(`Data Channel '${channel.protocol}' error! ${err.errorDetail} - ${err.message}`);
-    };
-
     channel.onmessage = (event) => {
       const msg = JSON.parse(event.data);
-      console.log(msg);
-
       const from = this.remotePeers.find(user => user.id === msg.id);
 
       const time = new Date();

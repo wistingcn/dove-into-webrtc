@@ -108,8 +108,10 @@ export class ConnectService {
 
           console.log('---> Creating and sending answer to caller');
 
-          await this.pc.createOffer();
-          await this.pc.setLocalDescription(this.pc.localDescription);
+          await this.pc.createAnswer().then(offer => {
+            return this.pc.setLocalDescription(offer);
+          });
+
           this.sendRequest('sdpAnswer', {
             from: this.peerId,
             to: this.fromUser.id,
@@ -252,8 +254,9 @@ export class ConnectService {
 
       try {
         console.log('---> Setting local description to the offer');
-        await this.pc.createOffer();
-        await this.pc.setLocalDescription(this.pc.localDescription);
+        await this.pc.createOffer().then(offer => {
+          return this.pc.setLocalDescription(offer);
+        });
 
         console.log('---> Sending the offer to the remote peer');
         this.sendRequest('sdpOffer', {

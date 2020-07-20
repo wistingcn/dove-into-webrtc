@@ -1,0 +1,103 @@
+{
+  "_from": "cordova-plugin-iosrtc",
+  "_id": "cordova-plugin-iosrtc@6.0.12",
+  "_inBundle": false,
+  "_integrity": "sha512-6E3c+TFInO1K6k2Y66/nR0ASGHD/PxvCOZHn9x0ZNs1gU+X9wWVgYIl9iAbQDz1cCAc/RHUi7vEkv5a/GxtGuw==",
+  "_location": "/cordova-plugin-iosrtc",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "cordova-plugin-iosrtc",
+    "name": "cordova-plugin-iosrtc",
+    "escapedName": "cordova-plugin-iosrtc",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/cordova-plugin-iosrtc/-/cordova-plugin-iosrtc-6.0.12.tgz",
+  "_shasum": "16c4ccb595e543067f465c8e58bcd9c1e61a7252",
+  "_spec": "cordova-plugin-iosrtc",
+  "_where": "/Users/liwei/Develop/dove-into-webrtc/cordova",
+  "author": {
+    "name": "Iñaki Baz Castillo",
+    "url": "https://inakibaz.me"
+  },
+  "bugs": {
+    "url": "https://github.com/cordova-rtc/cordova-plugin-iosrtc/issues"
+  },
+  "bundleDependencies": false,
+  "contributors": [
+    {
+      "name": "Saúl Ibarra Corretgé",
+      "url": "http://bettercallsaghul.com"
+    },
+    {
+      "name": "Iñaki Baz Castillo",
+      "url": "https://inakibaz.me"
+    },
+    {
+      "name": "Harold Thetiot",
+      "url": "https://sylaps.com"
+    }
+  ],
+  "cordova": {
+    "id": "cordova-plugin-iosrtc",
+    "platforms": [
+      "ios"
+    ]
+  },
+  "dependencies": {
+    "debug": "^4.1.1",
+    "domready": "^1.0.8",
+    "html-entities": "^1.2.1",
+    "random-number": "^0.0.7",
+    "xcode": "^2.0.0",
+    "yaeti": "^1.0.2"
+  },
+  "deprecated": false,
+  "description": "Cordova iOS plugin exposing the full WebRTC W3C JavaScript APIs",
+  "devDependencies": {
+    "browserify": "^14.4.0",
+    "gulp": "^4.0.2",
+    "gulp-derequire": "^2.1.1",
+    "gulp-eslint": "^6.0.0",
+    "gulp-header": "^2.0.9",
+    "gulp-jshint": "^2.0.4",
+    "jshint": "^2.9.4",
+    "jshint-stylish": "~2.2.1",
+    "vinyl-buffer": "^1.0.1",
+    "vinyl-source-stream": "^2.0.0"
+  },
+  "engines": [
+    {
+      "name": "cordova-ios",
+      "version": ">=5.0.1"
+    }
+  ],
+  "homepage": "https://github.com/cordova-rtc/cordova-plugin-iosrtc",
+  "keywords": [
+    "cordova",
+    "ecosystem:cordova",
+    "webrtc",
+    "ios",
+    "cordova-ios",
+    "cordova:plugin"
+  ],
+  "license": "MIT",
+  "main": "js/iosrtc.js",
+  "name": "cordova-plugin-iosrtc",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cordova-rtc/cordova-plugin-iosrtc.git"
+  },
+  "scripts": {
+    "build": "gulp browserify",
+    "lint": "gulp lint"
+  },
+  "version": "6.0.12"
+}

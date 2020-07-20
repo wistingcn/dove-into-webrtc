@@ -14,6 +14,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "cordova-android": "^8.1.0",
+    "cordova-ios": "^5.1.1",
     "cordova-plugin-android-permissions": "^1.0.2",
     "cordova-plugin-iosrtc": "^6.0.12"
   },
@@ -27,7 +28,8 @@
       "cordova-plugin-iosrtc": {}
     },
     "platforms": [
-      "android"
+      "android",
+      "ios"
     ]
   }
 }

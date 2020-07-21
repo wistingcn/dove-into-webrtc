@@ -26,8 +26,8 @@ export class AppComponent {
       this.splashScreen.hide();
       if (this.platform.is('ios')) {
         cordova.plugins.iosrtc.registerGlobals();
-        // Enable iosrtc debug (Optional)
         cordova.plugins.iosrtc.debug.enable('*', true);
+
         // load adapter.js
         const adapterVersion = 'latest';
         const script = document.createElement('script');

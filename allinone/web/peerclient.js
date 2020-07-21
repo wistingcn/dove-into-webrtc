@@ -5,12 +5,21 @@
 "use strict";
 
 const mediaConstraints = {
+<<<<<<< HEAD
   video: true,
   audio: {
 	autoGainControl: true,
 	echoCancellation: true,
 	noiseSuppression: true
 	}
+=======
+  audio: {
+    autoGainControl: true,
+    echoCancellation: true,
+    noiseSuppression: true
+  },
+  video: true
+>>>>>>> c1dc737f090fa04b443a6fd179b5bb43fa154dbb
 };
 let myUsername = null;
 let targetUserId = null;
@@ -31,6 +40,7 @@ let lastReadTime = 0;
 let dcFile = null; // Data Channel for file trans
 let channelId = 0;
 let caller = false;
+let selectedCodec = 'VP8';
 
 const chatBox = document.querySelector(".chatbox");
 const fileInput = document.querySelector('input#fileInput');
@@ -285,6 +295,8 @@ function handleConnectionStateChange() {
   switch (pc.connectionState) {
     case 'connected' :
       isConnected = true;
+      document.getElementById('replace').disabled = false;
+      document.getElementById('updateBitrate').disabled = false;
       break;
     case 'disconnected' :
       isConnected = false;
@@ -313,6 +325,15 @@ async function handleNegotiationNeededEvent() {
     return;
   }
 
+  const codecCap = getCapabilitiesCodec(selectedCodec);
+  try {
+    pc.getTransceivers().forEach(t => {
+      if(t.sender.track.kind !== 'video') return;
+      t.setCodecPreferences(codecCap);
+    });
+  } catch(err) {
+    error("setCodecPreferences error! " + err.name);
+  }
 
   try {
     log("---> Setting local description to the offer");
@@ -554,6 +575,86 @@ function handleGetUserMediaError(e) {
 
 function reportError(errMessage) {
   error(`Error ${errMessage.name}: ${errMessage.message}`);
+}
+
+function updateBitrate() {
+  if(!pc || !isConnected) return;
+  let ele = document.getElementById('bitrateInput');
+  let bitrate = document.getElementById('bitrateInput').value;
+  log("* Set MaxBitrate to : " + bitrate + "kbps");
+  bitrate = bitrate * 1024;
+
+  pc.getSenders().forEach(sender => {
+    if(sender.track.kind === 'audio') return;
+
+    let param = sender.getParameters();
+    param.encodings[0].maxBitrate = bitrate;
+    sender.setParameters(param)
+    .then(() => {
+      param = sender.getParameters();
+      log(" * Video Sender Encodings * ");
+      const senderParamsEncoding = param.encodings.map(encoding => JSON.stringify(encoding)).join("\n");
+      log(senderParamsEncoding);
+    })
+    .catch(error => {
+      error("Set MaxBitrate error! " + error.name);
+    });
+  });
+}
+
+function selectCodec() {
+  selectedCodec = document.getElementById("codecSelect").value;
+  log("* Select codec : " + selectedCodec);
+
+  if (isConnected) {
+    pc.restartIce();
+  }
+}
+
+function getCapabilitiesCodec(codec) {
+  let capCodes = RTCRtpSender.getCapabilities('video').codecs;
+  let cap = null;
+  switch(codec) {
+    case 'VP8':
+    case 'VP9':
+      cap = capCodes.find(item => item.mimeType.match(codec));
+      break;
+    case 'H264':
+      cap = capCodes.find(item => item.mimeType.match(codec) && item.sdpFmtpLine.match('42e01f'));
+  }
+
+  capCodes = capCodes.filter(item => item !== cap);
+  capCodes = [cap, ...capCodes];
+  log("Sorted Capabilities =>" + JSON.stringify(capCodes));
+  return capCodes;
+}
+
+function replaceBackground() {
+  if (!isConnected) return;
+
+  if (!chroma) {
+    chroma = new ChromaKey();
+    chroma.doLoad();
+  }
+
+  const checkBox = document.getElementById('replace');
+  if (checkBox.checked) {
+    log("replace background checked!");
+    const chromaTrack = chroma.capStream.getVideoTracks()[0];
+    pc.getSenders().forEach(sender => {
+      if(sender.track.kind !== 'video') return;
+      sender.replaceTrack(chromaTrack);
+    });
+    document.getElementById("chroma_video").srcObject = chroma.capStream;
+  } else {
+    log("replace background unchecked!");
+    const cameraTrack = webcamStream.getVideoTracks()[0];
+    pc.getSenders().forEach(sender => {
+      if(sender.track.kind !== 'video') return;
+      sender.replaceTrack(cameraTrack);
+    });
+    document.getElementById("chroma_video").srcObject = webcamStream;
+  }
 }
 
 function makeRandomString(length) {

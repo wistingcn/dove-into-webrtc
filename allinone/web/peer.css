@@ -11,7 +11,7 @@ html, body {
   display: grid;
   min-width: 1250px;
   height: 100%;
-  grid-template-areas: "infobox infobox infobox"
+  grid-template-areas: "infobox infobox settingbox"
   "userlistbox chatbox camerabox"
   "empty-container chat-controls chat-controls";
   grid-template-columns: 10em 1fr 500px;
@@ -22,6 +22,15 @@ html, body {
 .infobox {
   grid-area: infobox;
   overflow: auto;
+}
+
+.settingbox {
+  grid-area: settingbox;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
 }
 
 .userlistbox {

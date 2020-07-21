@@ -26,3 +26,5 @@ RTC 统计数据,使用Chart.js绘制图表,实时展现收发码率.
 * 支持WebRTC音视频通话
 * 基于数据通道的文字聊天
 * 支持Android和IOS
+## allinone
+整合了以上示例的大部分功能，也是ionic-webrtc的服务器端。

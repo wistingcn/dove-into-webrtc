@@ -5,21 +5,12 @@
 "use strict";
 
 const mediaConstraints = {
-<<<<<<< HEAD
-  video: true,
-  audio: {
-	autoGainControl: true,
-	echoCancellation: true,
-	noiseSuppression: true
-	}
-=======
   audio: {
     autoGainControl: true,
     echoCancellation: true,
     noiseSuppression: true
   },
   video: true
->>>>>>> c1dc737f090fa04b443a6fd179b5bb43fa154dbb
 };
 let myUsername = null;
 let targetUserId = null;

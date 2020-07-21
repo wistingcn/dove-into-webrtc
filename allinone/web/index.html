@@ -18,8 +18,8 @@
       <h2>点击用户列表里面的名称，建立WebRTC连接</h2>
       <div>
         输入用户名: 
-        <input id="name" type="text" maxlength="12" required autocomplete="username" inputmode="verbatim" placeholder="Username">
-        <input type="button" name="login" value="加入" onclick="connect()">
+        <input id="name" type="text" maxlength="12" required autocomplete="username" inputmode="verbatim" placeholder="Username"/>
+        <input type="button" name="login" value="加入" onclick="connect()"/>
       </div>
       <div>
         <form id="fileInfo">
@@ -40,8 +40,8 @@
     <div class="settingbox">
         <div>
           设置视频码率(kbps): 
-          <input id="bitrateInput" type="number" maxlength="12" required>
-          <input type="button" id="updateBitrate" value="更新" onclick="updateBitrate()" disabled>
+          <input id="bitrateInput" type="number" maxlength="12" required/>
+          <input type="button" id="updateBitrate" value="更新" onclick="updateBitrate()" disabled/>
         </div>
         <div>
           选择视频编码格式: 
@@ -50,10 +50,10 @@
             <option value="VP9">VP9</option>
             <option value="H264">H264</option>
           </select>
-          <input type="button" id="selectCodec" value="选择" onclick="selectCodec()">
+          <input type="button" id="selectCodec" value="选择" onclick="selectCodec()"/>
         </div>
         <div>
-          <input type="checkbox" id="replace" value="true" onclick="replaceBackground()" disabled>替换背景
+          <input type="checkbox" id="replace" value="true" onclick="replaceBackground()" disabled/>替换背景
         </div>
     </div>
     <ul class="userlistbox"></ul>
@@ -67,8 +67,8 @@
     <div class="empty-container"></div>
     <div class="chat-controls">
       聊天:<br/>
-      <input id="textInput" type="text" size="100" maxlength="256" placeholder="说点什么吧..." autocomplete="off" disabled>
-      <input type="button" id="sendText" name="send" value="发送" onclick="handleSendButton()" disabled>
+      <input id="textInput" type="text" size="100" maxlength="256" placeholder="说点什么吧..." autocomplete="off" disabled/>
+      <input type="button" id="sendText" name="send" value="发送" onclick="handleSendButton()" disabled/>
     </div>
   </div>
   <script type="text/javascript" src="processor.js"></script>

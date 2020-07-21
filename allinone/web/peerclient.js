@@ -5,12 +5,21 @@
 "use strict";
 
 const mediaConstraints = {
+<<<<<<< HEAD
+  video: true,
+  audio: {
+	autoGainControl: true,
+	echoCancellation: true,
+	noiseSuppression: true
+	}
+=======
   audio: {
     autoGainControl: true,
     echoCancellation: true,
     noiseSuppression: true
   },
   video: true
+>>>>>>> c1dc737f090fa04b443a6fd179b5bb43fa154dbb
 };
 let myUsername = null;
 let targetUserId = null;
@@ -328,14 +337,16 @@ async function handleNegotiationNeededEvent() {
 
   try {
     log("---> Setting local description to the offer");
-    await pc.setLocalDescription();
-
-    log("---> Sending the offer to the remote peer");
-    signaling.sendRequest('sdpOffer', {
-      from: peerID,
-      to: inviteUser.id,
-      sdp: pc.localDescription
-    });
+		pc.createOffer().then(offer => {
+			return pc.setLocalDescription(offer);
+		}).then(() => {
+			log("---> Sending the offer to the remote peer");
+			signaling.sendRequest('sdpOffer', {
+				from: peerID,
+				to: inviteUser.id,
+				sdp: pc.localDescription
+			});
+		});
   } catch(err) {
     log("*** The following error occurred while handling the negotiationneeded event:");
     reportError(err);
@@ -515,12 +526,16 @@ async function handleVideoOfferMsg(msg) {
 
   log("---> Creating and sending answer to caller");
 
-  await pc.setLocalDescription();
-  signaling.sendRequest('sdpAnswer', {
-    from: peerID,
-    to: fromUser.id,
-    sdp: pc.localDescription
-  });
+	await pc.createAnswer().then(offer => {
+		return pc.setLocalDescription(offer);
+	});
+
+	signaling.sendRequest('sdpAnswer', {
+		from: peerID,
+		to: fromUser.id,
+		sdp: pc.localDescription
+	});
+
 }
 
 async function handleVideoAnswerMsg(msg) {

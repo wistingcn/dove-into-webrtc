@@ -1,4 +1,4 @@
-《深入WebRTC直播技术》示例代码，示例支持部署在Mac或者linux系统，使用Chrome浏览器打开页面
+《深入浅出WebRTC实时通信技术》示例代码，示例支持部署在Mac或者linux系统，使用Chrome浏览器打开页面
 
 ## chroma-keying 
 采集本地媒体流,结合Canvas实现虚拟背景.
